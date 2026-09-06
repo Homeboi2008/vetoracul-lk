@@ -1,0 +1,25 @@
+{% extends 'auth/base.html' %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+<div class="auth-card" style="max-width: 600px;">
+    <h2>👤 Профиль</h2>
+    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Телефон:</strong> {{ user.phone }}</p>
+    <p><strong>Город:</strong> {{ user.city }}</p>
+    <p><strong>Роль:</strong> {% if user.role == 'user' %}Пользователь{% else %}Ветеринар{% endif %}</p>
+    {% if user.role == 'user' %}
+        <p><strong>Подписка:</strong>
+            {% if user.has_active_subscription %}
+                <span class="badge bg-success">Активна до {{ user.subscriptions.first.end_date }}</span>
+            {% else %}
+                <span class="badge bg-danger">Нет активной</span>
+            {% endif %}
+        </p>
+    {% endif %}
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger" type="submit">Выйти</button>
+    </form>
+</div>
+{% endblock %}

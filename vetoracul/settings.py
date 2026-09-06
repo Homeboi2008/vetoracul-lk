@@ -93,8 +93,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+AUTH_USER_MODEL = 'vetoracul_app.User'
+
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@vetclinisdac.ru'

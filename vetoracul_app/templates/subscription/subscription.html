@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Управление подпиской</h2>
+
+{% if active_subscription %}
+    <p>Ваша подписка активна до <strong>{{ active_subscription.end_date }}</strong>.</p>
+    <p>Осталось дней: {{ active_subscription.days_left }}</p>
+    <form method="post" action="{% url 'create_subscription' %}">
+        {% csrf_token %}
+        <button type="submit">Продлить на 30 дней (200 ₽)</button>
+    </form>
+{% else %}
+    <p>У вас нет активной подписки.</p>
+    <form method="post" action="{% url 'create_subscription' %}">
+        {% csrf_token %}
+        <button type="submit">Оформить подписку (200 ₽)</button>
+    </form>
+{% endif %}
+
+{% if messages %}
+    <ul>
+    {% for message in messages %}
+        <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}
