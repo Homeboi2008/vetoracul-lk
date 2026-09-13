@@ -191,17 +191,65 @@ class Diagnosis(models.Model):
         return f'{self.pet.name}: {self.diagnosis_text[:30]}... ({self.date})'
 
 
+class Folder(models.Model):
+    """
+    Папка для организации документов в личном кабинете пользователя.
+    Поддерживает вложенность через self-FK.
+    """
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='folders',
+        verbose_name='Владелец'
+    )
+    name = models.CharField(max_length=200, verbose_name='Название папки')
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        verbose_name='Родительская папка'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+
+    class Meta:
+        verbose_name = 'Папка'
+        verbose_name_plural = 'Папки'
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['owner', 'parent', 'name'],
+                name='unique_folder_per_parent'
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_root(self):
+        return self.parent is None
+
+
 class Document(models.Model):
+    """Модель загруженного документа, привязанного к питомцу."""
     pet = models.ForeignKey(
         Pet,
         on_delete=models.CASCADE,
         related_name='documents',
         verbose_name='Питомец'
     )
-    file = models.FileField(
-        upload_to='documents/%Y/%m/%d/',
-        verbose_name='Файл'
+    folder = models.ForeignKey(
+        Folder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documents',
+        verbose_name='Папка'
     )
+    file = models.FileField(upload_to='documents/%Y/%m/%d/', verbose_name='Файл')
     uploaded_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -209,22 +257,13 @@ class Document(models.Model):
         related_name='uploaded_documents',
         verbose_name='Кем загружен'
     )
-    date = models.DateField(
-        verbose_name='Дата документа'
-    )
-    uploaded_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата загрузки'
-    )
-    title = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name='Название'
-    )
-    description = models.TextField(
-        blank=True,
-        verbose_name='Описание'
-    )
+    date = models.DateField(verbose_name='Дата документа')
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата загрузки')
+    title = models.CharField(max_length=255, blank=True, verbose_name='Название')
+    description = models.TextField(blank=True, verbose_name='Описание')
+
+    is_deleted = models.BooleanField(default=False, verbose_name='Удалён', db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата удаления')
 
     class Meta:
         verbose_name = 'Документ'
@@ -233,6 +272,18 @@ class Document(models.Model):
 
     def __str__(self):
         return f'Документ от {self.date} для {self.pet.name}'
+
+    def soft_delete(self):
+        """Помечает документ удалённым, не удаляя файл с диска."""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+
+    def restore(self):
+        """Восстанавливает документ из корзины."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])
 
 
 class Reminder(models.Model):

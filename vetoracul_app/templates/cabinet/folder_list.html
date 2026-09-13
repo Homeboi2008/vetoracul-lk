@@ -1,0 +1,25 @@
+{% extends 'auth/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>📁 Мои папки</h2>
+        <div>
+            <a href="{% url 'folder_create' %}" class="btn btn-primary">+ Новая папка</a>
+            <a href="{% url 'trash' %}" class="btn btn-outline-secondary">🗑 Корзина</a>
+        </div>
+    </div>
+
+    {% if folders %}
+        <div class="list-group">
+            {% for folder in folders %}
+                <a href="{% url 'folder_detail' folder.pk %}" class="list-group-item list-group-item-action">
+                    📁 {{ folder.name }}
+                    <span class="badge bg-secondary float-end">{{ folder.documents.count }} файлов</span>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">Папок пока нет. Создайте первую папку!</p>
+    {% endif %}
+</div>
+{% endblock %}

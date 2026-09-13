@@ -1,0 +1,108 @@
+{% extends 'auth/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2>🐾 {{ pet.name }}</h2>
+            <p class="text-muted mb-1">
+                {{ pet.animal_type }} • {{ pet.get_gender_display }}
+                {% if pet.age %} • {{ pet.age }} лет{% endif %}
+                • {{ pet.weight }} кг
+            </p>
+            <p class="mb-1"><strong>Владелец:</strong> {{ pet.owner.get_full_name|default:pet.owner.username }}</p>
+            {% if pet.co_owners.all %}
+                <p class="mb-1"><strong>Совладельцы:</strong>
+                    {% for co in pet.co_owners.all %}{{ co.get_full_name|default:co.username }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </p>
+            {% endif %}
+        </div>
+        <div>
+            {% if pet.owner == user or user in pet.co_owners.all %}
+                <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-outline-secondary">Редактировать</a>
+            {% endif %}
+            {% if pet.owner == user %}
+                <a href="{% url 'pet_delete' pet.pk %}" class="btn btn-outline-danger">Удалить</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mt-4" id="petTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#diag">Диагнозы ({{ diagnoses|length }})</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#docs">Документы ({{ documents|length }})</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rem">Напоминания ({{ reminders|length }})</button></li>
+    </ul>
+
+    <div class="tab-content mt-3">
+        <div class="tab-pane fade show active" id="diag">
+            <a href="{% url 'diagnosis_add' pet.pk %}" class="btn btn-sm btn-primary mb-3">+ Добавить диагноз</a>
+            {% if diagnoses %}
+                <ul class="list-group">
+                    {% for d in diagnoses %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ d.get_status_display }}</strong>
+                                    <small class="text-muted">— {{ d.date }}</small>
+                                </div>
+                                <div>
+                                    <a href="{% url 'diagnosis_edit' d.pk %}" class="btn btn-sm btn-outline-secondary">Изменить</a>
+                                    <a href="{% url 'diagnosis_delete' d.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                                </div>
+                            </div>
+                            <p class="mb-0 mt-2">{{ d.diagnosis_text }}</p>
+                            {% if d.vet %}<small class="text-muted">Врач: {{ d.vet.get_full_name|default:d.vet.username }}</small>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}<p class="text-muted">Диагнозов нет.</p>{% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="docs">
+            <a href="{% url 'document_add' pet.pk %}" class="btn btn-sm btn-primary mb-3">+ Загрузить документ</a>
+            {% if documents %}
+                <ul class="list-group">
+                    {% for doc in documents %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>
+                                <a href="{{ doc.file.url }}">{{ doc.title|default:doc.file.name }}</a>
+                                <small class="text-muted">— {{ doc.date }}</small>
+                            </span>
+                            <span>
+                                <a href="{% url 'document_edit' doc.pk %}" class="btn btn-sm btn-outline-secondary">Изменить</a>
+                                <form method="post" action="{% url 'document_soft_delete' doc.pk %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Переместить в корзину?')">Удалить</button>
+                                </form>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}<p class="text-muted">Документов нет.</p>{% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="rem">
+            <a href="{% url 'reminder_add' pet.pk %}" class="btn btn-sm btn-primary mb-3">+ Добавить напоминание</a>
+            {% if reminders %}
+                <ul class="list-group">
+                    {% for r in reminders %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>
+                                <strong>{{ r.title }}</strong>
+                                <small class="text-muted">— {{ r.get_reminder_type_display }}</small>
+                            </span>
+                            <span>
+                                <span class="badge bg-{% if r.status == 'completed' %}success{% elif r.status == 'missed' %}danger{% elif r.status == 'cancelled' %}secondary{% else %}warning{% endif %}">
+                                    {{ r.get_status_display }}
+                                </span>
+                                {{ r.date }}{% if r.time %} {{ r.time|time:"H:i" }}{% endif %}
+                                <a href="{% url 'reminder_edit' r.pk %}" class="btn btn-sm btn-outline-secondary">Изменить</a>
+                                <a href="{% url 'reminder_delete' r.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}<p class="text-muted">Напоминаний нет.</p>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
