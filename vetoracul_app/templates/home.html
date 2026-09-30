@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Панель управления — ВетОракул{% endblock %}
+
+{% block content %}
+<section class="page active">
+    <div class="dashboard-header">
+        <h1>Панель управления</h1>
+        <p class="dashboard-subtitle">Сводка по вашим питомцам</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card stat-card--pets">
+            <div class="stat-card__top">
+                <span class="stat-card__title">Всего питомцев</span>
+                <span class="stat-card__icon">🐾</span>
+            </div>
+            <div class="stat-card__value">{{ stats.pets }}</div>
+        </div>
+        <div class="stat-card stat-card--docs">
+            <div class="stat-card__top">
+                <span class="stat-card__title">Документов</span>
+                <span class="stat-card__icon">📄</span>
+            </div>
+            <div class="stat-card__value">{{ stats.documents }}</div>
+        </div>
+        <div class="stat-card stat-card--reminders">
+            <div class="stat-card__top">
+                <span class="stat-card__title">Напоминаний</span>
+                <span class="stat-card__icon">⏰</span>
+            </div>
+            <div class="stat-card__value">{{ stats.reminders }}</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2 class="section-heading">Ваши питомцы</h2>
+        <div class="pets-mini-grid">
+            {% for pet in pets %}
+                <a href="{% url 'pet_detail' pet.pk %}" class="pet-mini-card" style="text-decoration:none;color:inherit;">
+                    <div class="pet-mini-avatar pet-mini-avatar--blue">
+                        <span class="pet-mini-letter">{{ pet.name|slice:":1"|upper }}</span>
+                    </div>
+                    <div class="pet-mini-info">
+                        <h3 class="pet-mini-name">{{ pet.name }}</h3>
+                        <p class="pet-mini-breed">{{ pet.animal_type }}</p>
+                    </div>
+                </a>
+            {% empty %}
+                <p class="text-muted">У вас пока нет питомцев. <a href="{% url 'pet_add' %}">Добавить</a></p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2 class="section-heading">Ближайшие напоминания</h2>
+        <div class="reminders-list">
+            {% for r in upcoming_reminders %}
+                <div class="reminder-item">
+                    <div class="reminder-icon reminder-icon--blue">📅</div>
+                    <div class="reminder-info">
+                        <h4 class="reminder-title">{{ r.title }}</h4>
+                        <p class="reminder-time">{{ r.date }} • {{ r.pet.name }}</p>
+                    </div>
+                    <span class="reminder-status reminder-status--upcoming">{{ r.get_status_display }}</span>
+                </div>
+            {% empty %}
+                <p class="text-muted" style="padding:20px;">Нет предстоящих напоминаний.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

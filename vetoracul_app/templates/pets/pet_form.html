@@ -1,19 +1,25 @@
-{% extends 'auth/base.html' %}
+{% extends 'base.html' %}
+{% block title %}{% if object %}Редактирование{% else %}Новый питомец{% endif %}{% endblock %}
+
 {% block content %}
-<div class="container mt-4" style="max-width: 700px;">
-    <h2>{% if object %}Редактирование питомца{% else %}Новый питомец{% endif %}</h2>
-    <form method="post" class="mt-3">
+<div class="form-container">
+    <div class="form-header-block">
+        <h1 class="form-title">{% if object %}Редактирование питомца{% else %}Новый питомец{% endif %}</h1>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="pet-form">
         {% csrf_token %}
         {% for field in form %}
-            <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            <div class="form-group">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
-                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                {% if field.help_text %}<p class="form-hint">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <a href="{% url 'pet_list' %}" class="btn btn-outline-secondary">Отмена</a>
+        <div class="form-actions">
+            <a href="{% url 'pet_list' %}" class="btn btn-secondary">Отмена</a>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
     </form>
 </div>
 {% endblock %}

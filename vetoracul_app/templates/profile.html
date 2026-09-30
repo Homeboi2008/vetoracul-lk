@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👤 Профиль</h1>
+    <p class="page-subtitle">Основная информация о вас</p>
+</div>
+
+<div class="settings-card" style="max-width:700px;">
+    <div class="profile-avatar-section">
+        <div class="profile-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+        <div class="profile-avatar-info">
+            <h3 class="profile-name">{{ user.get_full_name|default:user.username }}</h3>
+            <p class="profile-role">{{ user.get_role_display }}</p>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label class="form-label">Имя пользователя</label>
+            <input type="text" class="form-input" value="{{ user.username }}" readonly>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" value="{{ user.email }}" readonly>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Телефон</label>
+            <input type="text" class="form-input" value="{{ user.phone|default:'—' }}" readonly>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Город</label>
+            <input type="text" class="form-input" value="{{ user.city|default:'—' }}" readonly>
+        </div>
+    </div>
+
+    {% if user.role == 'user' %}
+        <div class="settings-divider"></div>
+        <div class="settings-group">
+            <h3 class="settings-group-title">Подписка</h3>
+            {% if user.has_active_subscription %}
+                <p>Статус: <span class="status-active" style="padding:6px 14px;border-radius:999px;">Активна</span></p>
+                {% with sub=user.subscriptions.first %}
+                    {% if sub %}
+                        <p>Действует до: <strong>{{ sub.end_date }}</strong></p>
+                        <p>Осталось дней: <strong>{{ sub.days_left }}</strong></p>
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                <p>Статус: <span class="status-inactive" style="padding:6px 14px;border-radius:999px;">Нет активной</span></p>
+                <a href="{% url 'subscription' %}" class="btn btn-primary">Оформить подписку</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="settings-actions">
+        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline">Выйти</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

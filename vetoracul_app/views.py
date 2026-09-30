@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm
 
 
 
@@ -22,7 +22,7 @@ class SubscriptionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     Страница управления подпиской.
     Доступна только обычным пользователям (не ветеринарам).
     """
-    template_name = 'subscription/subscription.html'
+    template_name = 'subscription.html'
 
     def test_func(self):
         return self.request.user.role == 'user'
@@ -102,8 +102,16 @@ class CustomLoginView(LoginView):
     template_name = 'auth/login.html'
     redirect_authenticated_user = True
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if not self.request.POST.get('remember_me'):
+            self.request.session.set_expiry(0)
+        else:
+            self.request.session.set_expiry(1209600)
+        return response
+
     def form_invalid(self, form):
-        messages.error(self.request, 'Неверное имя пользователя или пароль.')
+        messages.error(self.request, 'Неверный email/логин или пароль.')
         return super().form_invalid(form)
 
 
@@ -126,7 +134,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 
 
 class ProfileView(LoginRequiredMixin, TemplateView):
-    template_name = 'auth/profile.html'
+    template_name = 'profile.html'
 
 class VerifyEmailView(FormView):
     form_class = VerificationCodeForm
@@ -134,7 +142,6 @@ class VerifyEmailView(FormView):
     success_url = reverse_lazy('home')
 
     def dispatch(self, request, *args, **kwargs):
-        # Проверяем, есть ли в сессии ID пользователя
         if not request.session.get('pending_user_id'):
             messages.error(request, 'Сессия истекла. Зарегистрируйтесь заново.')
             return redirect('register')
@@ -151,12 +158,15 @@ class VerifyEmailView(FormView):
         # Код верен – активируем пользователя
         self.user.is_active = True
         self.user.save()
-        # Удаляем код, больше не нужен
+        # Удаляем код
         EmailVerificationCode.objects.filter(user=self.user).delete()
+
+        # 👇 ВАЖНО: указываем backend явно, т.к. их несколько
+        self.user.backend = 'django.contrib.auth.backends.ModelBackend'
+
         # Автоматически логиним пользователя
         login(self.request, self.user)
         messages.success(self.request, 'Ваш email подтверждён! Добро пожаловать.')
-        # Очищаем сессию
         del self.request.session['pending_user_id']
         return super().form_valid(form)
 
@@ -691,3 +701,112 @@ class ReminderDeleteView(LoginRequiredMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Напоминание удалено.')
         return super().form_valid(form)
+    
+class VetDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'vet/dashboard.html'
+
+    def test_func(self):
+        return self.request.user.role == 'vet'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        pets = Pet.objects.all().order_by('-created_at')
+        ctx['patients'] = pets[:20]
+        ctx['patients_count'] = pets.count()
+        ctx['today'] = timezone.now().date()
+        ctx['today_reminders'] = Reminder.objects.filter(
+            date=timezone.now().date(), status='pending'
+        ).select_related('pet', 'pet__owner')
+        return ctx
+    
+class HomeView(LoginRequiredMixin, TemplateView):
+    template_name = 'home.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.role == 'vet':
+            return redirect('vet_dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        pets = (user.pets.all() | user.co_owned_pets.all()).distinct()
+        ctx['pets'] = pets
+        ctx['stats'] = {
+            'pets': pets.count(),
+            'documents': Document.objects.filter(pet__in=pets, is_deleted=False).count(),
+            'reminders': Reminder.objects.filter(pet__in=pets, status='pending').count(),
+        }
+        ctx['upcoming_reminders'] = Reminder.objects.filter(
+            pet__in=pets, status='pending', date__gte=timezone.now().date()
+        ).order_by('date')[:5]
+        return ctx
+
+    
+class VetRegisterView(CreateView):
+    form_class = VetRegistrationForm
+    template_name = 'auth/register_vet.html'
+    success_url = reverse_lazy('verify_email')
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.role = 'vet'
+        user.is_active = False
+        user.save()
+        code_obj = EmailVerificationCode.objects.create(user=user)
+        send_mail(
+            'Подтверждение регистрации ветеринара в ВетОракуле',
+            f'Здравствуйте, {user.first_name}!\n\nВаш код подтверждения: {code_obj.code}\n\nКод действителен 15 минут.',
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+        )
+        self.request.session['pending_user_id'] = user.id
+        messages.success(self.request, 'На ваш email отправлен код подтверждения.')
+        return super().form_valid(form)
+    
+class VetPatientCardView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = Pet
+    template_name = 'vet/patient_card.html'
+    context_object_name = 'pet'
+
+    def test_func(self):
+        return self.request.user.role == 'vet'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        pet = self.get_object()
+        ctx['diagnoses'] = pet.diagnoses.order_by('-date')
+        ctx['documents'] = pet.documents.filter(is_deleted=False).order_by('-date')
+        ctx['reminders'] = pet.reminders.order_by('date', 'time')
+        return ctx
+    
+class VetMedicalRecordCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Diagnosis
+    form_class = DiagnosisForm
+    template_name = 'vet/medical_record.html'
+
+    def test_func(self):
+        return self.request.user.role == 'vet'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.pet = get_object_or_404(Pet, pk=kwargs['pet_pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.pet = self.pet
+        form.instance.vet = self.request.user
+        messages.success(self.request, 'Медицинская запись добавлена.')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('vet_patient_card', kwargs={'pk': self.pet.pk})
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['pet'] = self.pet
+        return ctx

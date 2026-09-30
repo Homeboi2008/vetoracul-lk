@@ -1,16 +1,17 @@
-{% extends 'auth/base.html' %}
+{% extends 'base.html' %}
+{% block title %}Подтверждение удаления{% endblock %}
+
 {% block content %}
-<div class="container mt-4" style="max-width: 500px;">
-    <div class="card border-danger">
-        <div class="card-body">
-            <h3 class="card-title text-danger">Удалить {{ object_type }}?</h3>
-            <p>Вы уверены, что хотите удалить: <strong>{{ object }}</strong>?</p>
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Да, удалить</button>
-                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Отмена</a>
-            </form>
-        </div>
-    </div>
+<div class="page-header">
+    <h1>Удалить {{ object_type }}?</h1>
+</div>
+
+<div class="settings-card" style="max-width:500px;">
+    <p>Вы уверены, что хотите удалить: <strong>{{ object }}</strong>?</p>
+    <form method="post" class="form-actions" style="border:none;padding-top:0;">
+        {% csrf_token %}
+        <a href="{{ cancel_url }}" class="btn btn-secondary">Отмена</a>
+        <button type="submit" class="btn btn-danger">Да, удалить</button>
+    </form>
 </div>
 {% endblock %}

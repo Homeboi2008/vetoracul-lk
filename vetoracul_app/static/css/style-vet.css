@@ -1,0 +1,1366 @@
+/* лк врача */
+
+/* =========================================
+   1. КОМПАКТНАЯ СТРОКА ИНФОРМАЦИИ (ФИО владельца)
+   ========================================= */
+.info-row--compact {
+  justify-content: flex-start !important;
+  gap: 12px;
+}
+
+.info-row--compact .info-label {
+  min-width: auto;
+}
+
+.info-row--compact .info-value {
+  text-align: left;
+}
+
+/* =========================================
+   2. ТЕКУЩИЙ ПРИЁМ (с увеличенными отступами)
+   ========================================= */
+.current-appointment-card {
+  background: linear-gradient(135deg, #f5f0ff 0%, #ede9fe 100%);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  border: 2px solid var(--color-accent-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.current-appt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.current-appt-pet {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.current-appt-info {
+  flex: 1;
+}
+
+.current-appt-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 4px 0;
+}
+
+.current-appt-breed {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.current-appt-time {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  white-space: nowrap;
+  background: white;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+}
+
+.current-appt-details {
+  margin-bottom: 24px;
+}
+
+.current-appt-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.current-appt-actions .btn {
+  flex: 1;
+}
+
+/* =========================================
+   3. КАРТОЧКИ ПАЦИЕНТОВ (адаптация аватара)
+   ========================================= */
+.pet-card__avatar--letter {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pet-card__avatar--letter .pet-mini-avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.pet-card__avatar--letter .pet-mini-letter {
+  font-size: 2rem;
+}
+
+/* Вид списка для пациентов */
+.pets-grid.view-list {
+  grid-template-columns: 1fr;
+}
+
+.pets-grid.view-list .pet-card {
+  flex-direction: row;
+  align-items: center;
+}
+
+.pets-grid.view-list .pet-card__header {
+  border-bottom: none;
+  border-right: 1px solid var(--color-border);
+  padding: 20px;
+  flex-direction: column;
+  min-width: 200px;
+}
+
+.pets-grid.view-list .pet-card__avatar--letter .pet-mini-avatar {
+  width: 80px;
+  height: 80px;
+}
+
+.pets-grid.view-list .pet-card__body {
+  flex: 1;
+  padding: 20px;
+}
+
+.pets-grid.view-list .pet-card__footer {
+  flex-direction: column;
+  padding: 20px;
+  border-top: none;
+  border-left: 1px solid var(--color-border);
+  min-width: 180px;
+}
+
+.pets-grid.view-list .pet-card__footer .btn {
+  width: 100%;
+}
+
+/* =========================================
+   4. МОДАЛЬНОЕ ОКНО "СВЯЗАТЬСЯ С ВЛАДЕЛЬЦЕМ"
+   ========================================= */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(45, 27, 78, 0.6);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--color-bg);
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 24px 0;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-owner-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.contact-item:hover {
+  background: white;
+  border-color: var(--color-accent-soft);
+  transform: translateX(4px);
+}
+
+.contact-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+.contact-text {
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+/* =========================================
+   5. АДАПТИВНОСТЬ
+   ========================================= */
+@media (max-width: 768px) {
+  .current-appointment-card {
+    padding: 20px;
+  }
+  
+  .current-appt-header {
+    flex-direction: column;
+  }
+  
+  .current-appt-actions {
+    flex-direction: column;
+  }
+  
+  .pets-grid.view-list .pet-card {
+    flex-direction: column;
+  }
+  
+  .pets-grid.view-list .pet-card__header {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    flex-direction: row;
+    min-width: auto;
+  }
+  
+  .pets-grid.view-list .pet-card__footer {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    min-width: auto;
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 500px) {
+  .current-appt-name {
+    font-size: 1.4rem;
+  }
+  
+  .current-appt-time {
+    font-size: 1.1rem;
+    padding: 6px 12px;
+  }
+  
+  .current-appt-actions .btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .modal-content {
+    padding: 24px 20px;
+  }
+  
+  .modal-title {
+    font-size: 1.2rem;
+  }
+  
+  .contact-item {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ===== КАРТОЧКА ПАЦИЕНТА ДЛЯ ВРАЧА ===== */
+
+/* Карточка основной информации */
+.patient-info-card {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.patient-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.patient-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.patient-info-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.patient-info-value {
+  font-size: 1rem;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.patient-info-value.highlight {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* История посещений */
+.visit-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.visit-history-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+
+.visit-history-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.visit-date {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.visit-date-day {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.visit-date-month {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+
+.visit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.visit-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 6px 0;
+}
+
+.visit-description {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.visit-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+}
+
+.visit-doctor {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.visit-type {
+  color: var(--color-accent);
+  background: #ede9fe;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .patient-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .visit-history-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .visit-history-item .btn {
+    width: 100%;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 500px) {
+  .patient-info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .visit-date {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .visit-date-day {
+    font-size: 1.5rem;
+  }
+  
+  .visit-title {
+    font-size: 1rem;
+  }
+}
+
+/* ===== КАРТОЧКА ПАЦИЕНТА ДЛЯ ВРАЧА ===== */
+
+/* Дополнительный тег "Активен" */
+.pet-tag--active {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+/* Карточка информации о владельце */
+.owner-info-card {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  border: 1px solid var(--color-border);
+}
+
+.owner-info-row {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.owner-info-row:last-child {
+  border-bottom: none;
+}
+
+.owner-info-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 100px;
+}
+
+.owner-info-value {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.owner-info-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.owner-info-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Элементы списка истории посещений */
+.list-doctor {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.list-description {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+/* Модальное окно (если ещё нет в style-pet.css) */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(45, 27, 78, 0.6);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--color-bg);
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 24px 0;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-owner-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.contact-item:hover {
+  background: white;
+  border-color: var(--color-accent-soft);
+  transform: translateX(4px);
+}
+
+.contact-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+.contact-text {
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+/* Адаптивность для владельца */
+@media (max-width: 500px) {
+  .owner-info-row {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+  }
+  
+  .owner-info-label {
+    min-width: auto;
+  }
+}
+
+/* ===== УПРАВЛЕНИЕ ПЕРСОНАЛОМ ===== */
+
+/* Сетка сотрудников */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+}
+
+/* Карточка сотрудника */
+.staff-card {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+}
+
+.staff-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-accent-soft);
+}
+
+.staff-card__header {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, #faf7ff 0%, #ffffff 100%);
+}
+
+.staff-card__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
+}
+
+.staff-card__initials {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+}
+
+.staff-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-card__name {
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+.staff-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-role {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.staff-role--doctor {
+  background: #ede9fe;
+  color: var(--color-accent);
+}
+
+.staff-role--admin {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.staff-specialty {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.staff-card__status {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.staff-card__body {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.staff-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.staff-info-row:last-child {
+  border-bottom: none;
+}
+
+.staff-info-label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.staff-info-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.staff-info-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.staff-card__footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--color-border);
+  background: #faf7ff;
+}
+
+.staff-card__footer .btn {
+  flex: 1;
+}
+
+/* Модальное окно (большое) */
+.modal-content--large {
+  max-width: 600px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .staff-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .staff-card__header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .staff-card__footer {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 500px) {
+  .staff-card {
+    padding: 0;
+  }
+  
+  .staff-card__header {
+    padding: 16px;
+  }
+  
+  .staff-card__body {
+    padding: 16px;
+  }
+  
+  .staff-card__footer {
+    padding: 16px;
+  }
+  
+  .staff-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .staff-info-label {
+    min-width: auto;
+  }
+  
+  .modal-content--large {
+    padding: 24px 20px;
+  }
+}
+
+/* ===== ДОПОЛНЕНИЯ ДЛЯ АДМИН-ПАНЕЛИ ===== */
+
+/* Статус "Заблокирован" */
+.status-blocked {
+  background: #fee2e2 !important;
+  color: var(--color-danger) !important;
+}
+
+/* Кнопка блокировки */
+.btn-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.btn-warning:hover {
+  background: #fde68a;
+  transform: translateY(-1px);
+}
+
+/* Стили для карточек питомцев в поиске (используем pet-card из style.css) */
+#pets-search .pet-card__avatar--letter {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#pets-search .pet-card__avatar--letter .pet-mini-avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+#pets-search .pet-card__avatar--letter .pet-mini-letter {
+  font-size: 2rem;
+}
+
+/* Компактная строка информации */
+.info-row--compact {
+  justify-content: flex-start !important;
+  gap: 12px;
+}
+
+.info-row--compact .info-label {
+  min-width: auto;
+}
+
+.info-row--compact .info-value {
+  text-align: left;
+}
+
+/* Большие модальные окна */
+.modal-content--large {
+  max-width: 600px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Сетка сотрудников */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+}
+
+/* Карточка сотрудника */
+.staff-card {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+}
+
+.staff-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-accent-soft);
+}
+
+.staff-card__header {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, #faf7ff 0%, #ffffff 100%);
+}
+
+.staff-card__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
+}
+
+.staff-card__initials {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+}
+
+.staff-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-card__name {
+  margin: 0 0 6px 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.staff-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-role {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.staff-role--doctor {
+  background: #ede9fe;
+  color: var(--color-accent);
+}
+
+.staff-role--admin {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.staff-specialty {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.staff-card__status {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.staff-card__body {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.staff-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.staff-info-row:last-child {
+  border-bottom: none;
+}
+
+.staff-info-label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.staff-info-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.staff-info-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.staff-card__footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--color-border);
+  background: #faf7ff;
+}
+
+.staff-card__footer .btn {
+  flex: 1;
+}
+
+/* Календарь и расписание (используем стили из style.css клиента) */
+.reminders-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .reminders-layout {
+    grid-template-columns: 1fr;
+  }
+  .calendar-card {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .staff-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .staff-card__header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .staff-card__footer {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 500px) {
+  .staff-card__header {
+    padding: 16px;
+  }
+  
+  .staff-card__body {
+    padding: 16px;
+  }
+  
+  .staff-card__footer {
+    padding: 16px;
+  }
+  
+  .staff-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .staff-info-label {
+    min-width: auto;
+  }
+  
+  .modal-content--large {
+    padding: 24px 20px;
+  }
+}
+
+/* ===== ПОЛЬЗОВАТЕЛИ ===== */
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+}
+
+.user-card {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+}
+
+.user-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-accent-soft);
+}
+
+.user-card__header {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, #faf7ff 0%, #ffffff 100%);
+}
+
+.user-card__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
+}
+
+.user-card__initials {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+}
+
+.user-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card__name {
+  margin: 0 0 6px 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.user-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.user-pets, .user-registered {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-card__status {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-card__body {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.user-info-row:last-child {
+  border-bottom: none;
+}
+
+.user-info-label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.user-info-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.user-info-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.user-card__footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--color-border);
+  background: #faf7ff;
+}
+
+.user-card__footer .btn {
+  flex: 1;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-card__header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .user-card__footer {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 500px) {
+  .user-card__header {
+    padding: 16px;
+  }
+  
+  .user-card__body {
+    padding: 16px;
+  }
+  
+  .user-card__footer {
+    padding: 16px;
+  }
+  
+  .user-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .user-info-label {
+    min-width: auto;
+  }
+}

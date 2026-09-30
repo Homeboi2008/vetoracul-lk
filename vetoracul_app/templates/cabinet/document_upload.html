@@ -1,17 +1,25 @@
-{% extends 'auth/base.html' %}
+{% extends 'base.html' %}
+{% block title %}Загрузка документа{% endblock %}
+
 {% block content %}
-<div class="container mt-4" style="max-width: 600px;">
-    <h2>Загрузка документа</h2>
-    <form method="post" enctype="multipart/form-data">
+<div class="page-header">
+    <h1>Загрузка документа</h1>
+</div>
+
+<div class="settings-card" style="max-width:600px;">
+    <form method="post" enctype="multipart/form-data" class="pet-form">
         {% csrf_token %}
         {% for field in form %}
-            <div class="mb-3">
+            <div class="form-group">
                 <label class="form-label">{{ field.label }}</label>
                 {{ field }}
-                {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Загрузить</button>
+        <div class="form-actions">
+            <a href="{% url 'folder_list' %}" class="btn btn-secondary">Отмена</a>
+            <button type="submit" class="btn btn-primary">Загрузить</button>
+        </div>
     </form>
 </div>
 {% endblock %}

@@ -1,41 +1,45 @@
-{% extends 'auth/base.html' %}
+{% extends 'base.html' %}
+{% block title %}{{ folder.name }}{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>📁 {{ folder.name }}</h2>
-    <a href="{% url 'folder_list' %}" class="btn btn-sm btn-outline-secondary mb-3">← К списку папок</a>
-    <a href="{% url 'document_upload' pet_pk=1 %}" class="btn btn-sm btn-primary mb-3">+ Загрузить документ</a>
-
-    {% if subfolders %}
-        <h4 class="mt-4">Подпапки</h4>
-        <div class="list-group mb-3">
-            {% for sub in subfolders %}
-                <a href="{% url 'folder_detail' sub.pk %}" class="list-group-item list-group-item-action">📁 {{ sub.name }}</a>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <h4>Документы</h4>
-    {% if documents %}
-        <table class="table table-hover">
-            <thead><tr><th>Название</th><th>Дата</th><th>Питомец</th><th></th></tr></thead>
-            <tbody>
-            {% for doc in documents %}
-                <tr>
-                    <td><a href="{{ doc.file.url }}">{{ doc.title|default:doc.file.name }}</a></td>
-                    <td>{{ doc.date }}</td>
-                    <td>{{ doc.pet.name }}</td>
-                    <td>
-                        <form method="post" action="{% url 'document_soft_delete' doc.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Переместить в корзину?')">Удалить</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p class="text-muted">Документов нет.</p>
-    {% endif %}
+<div class="page-header">
+    <h1>📁 {{ folder.name }}</h1>
+    <a href="{% url 'folder_list' %}" class="btn btn-secondary">← К папкам</a>
 </div>
+
+{% if subfolders %}
+    <h2 class="section-heading">Подпапки</h2>
+    <div class="list-group" style="background:white;border-radius:20px;padding:12px;border:1px solid var(--color-border);margin-bottom:24px;">
+        {% for sub in subfolders %}
+            <a href="{% url 'folder_detail' sub.pk %}"
+               style="display:block;padding:16px;border-bottom:1px solid var(--color-border);text-decoration:none;color:inherit;">
+                📁 {{ sub.name }}
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<h2 class="section-heading">Документы</h2>
+{% if documents %}
+    {% for doc in documents %}
+        <div class="document-item" style="margin-bottom:12px;">
+            <div class="document-info">
+                <div class="document-icon">📄</div>
+                <div class="document-details">
+                    <div class="document-name">{{ doc.title|default:doc.file.name }}</div>
+                    <div class="document-meta">{{ doc.date }} • {{ doc.pet.name }}</div>
+                </div>
+            </div>
+            <div class="document-actions">
+                <a href="{{ doc.file.url }}" class="btn btn-sm btn-primary" target="_blank">Скачать</a>
+                <form method="post" action="{% url 'document_soft_delete' doc.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline" onclick="return confirm('В корзину?')">Удалить</button>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="docs-empty"><h3 class="empty-title">Документов нет</h3></div>
+{% endif %}
 {% endblock %}

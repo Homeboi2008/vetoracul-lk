@@ -1,25 +1,290 @@
-{% extends 'auth/base.html' %}
-{% block title %}Регистрация{% endblock %}
-{% block content %}
-<div class="auth-card">
-    <h2 class="text-center">📝 Регистрация</h2>
-    <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <div class="form-text">{{ field.help_text|safe }}</div>
-                {% endif %}
-                {% if field.errors %}
-                    <div class="text-danger small">{{ field.errors }}</div>
-                {% endif %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+</head>
+<body>
+    <div class="reg-page">
+
+        <!-- Левая колонка — брендинг -->
+        <aside class="reg-branding">
+            <div class="branding-content">
+                <h1 class="branding-title">ВетОракул</h1>
+                <p class="branding-subtitle">Создайте аккаунт и получите доступ ко всем возможностям сервиса</p>
+
+                <div class="branding-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">📋</div>
+                        <div class="feature-text">
+                            <h3>Карточки питомцев</h3>
+                            <p>Вся информация о здоровье в одном месте</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">📄</div>
+                        <div class="feature-text">
+                            <h3>Документы</h3>
+                            <p>Анализы, рецепты и обследования</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">📅</div>
+                        <div class="feature-text">
+                            <h3>Напоминания</h3>
+                            <p>Не пропускайте вакцинации</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">👥</div>
+                        <div class="feature-text">
+                            <h3>Доступ для семьи</h3>
+                            <p>Делитесь данными с близкими</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="branding-footer">
+                    <p>© 2026 ВетОракул. Все права защищены.</p>
+                </div>
             </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
-        <hr>
-        <p class="text-center mb-0">Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
-    </form>
-</div>
-{% endblock %}
+        </aside>
+
+        <!-- Правая колонка — форма -->
+        <main class="reg-form-section">
+            <div class="reg-form-container">
+                <div class="reg-form-header">
+                    <h2 class="reg-form-title">Создать аккаунт</h2>
+                    <p class="reg-form-subtitle">Заполните форму, чтобы начать пользоваться сервисом</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="form-hint {% if message.tags == 'error' %}error{% else %}success{% endif %}" style="margin-bottom:12px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form class="reg-form" method="post" id="registrationForm" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="form-hint error" style="margin-bottom:12px;">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Имя / Фамилия -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="form-hint error">{{ form.first_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="form-hint error">{{ form.last_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="form-hint error">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Телефон -->
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <div class="form-hint error">{{ form.phone.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Пароль -->
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.password1.id_for_label }}">Пароль</label>
+                        <div class="password-input-wrapper">
+                            {{ form.password1 }}
+                            <button type="button" class="password-toggle" onclick="togglePassword('{{ form.password1.id_for_label }}', this)">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                        </div>
+                        {% if form.password1.errors %}
+                            <div class="form-hint error">{{ form.password1.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Подтверждение пароля -->
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.password2.id_for_label }}">Подтверждение пароля</label>
+                        <div class="password-input-wrapper">
+                            {{ form.password2 }}
+                            <button type="button" class="password-toggle" onclick="togglePassword('{{ form.password2.id_for_label }}', this)">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                        <p class="form-hint" id="passwordMatch"></p>
+                        {% if form.password2.errors %}
+                            <div class="form-hint error">{{ form.password2.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Согласие -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agreeTerms" required>
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">
+                                Я согласен с <a href="#" onclick="event.preventDefault()">условиями использования</a> и <a href="#" onclick="event.preventDefault()">политикой конфиденциальности</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-submit">
+                        <span>Зарегистрироваться</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+
+                    <div class="reg-form-footer">
+                        <p>Уже есть аккаунт? <a href="{% url 'login' %}" class="login-link">Войти</a></p>
+                        <p style="margin-top:8px;">Вы ветеринар? <a href="{% url 'register_vet' %}" class="login-link">Регистрация врача</a></p>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // ===== ПЕРЕКЛЮЧЕНИЕ ВИДИМОСТИ ПАРОЛЯ =====
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const eyeIcon = button.querySelector('.eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+
+        // ===== ПРОВЕРКА СЛОЖНОСТИ ПАРОЛЯ =====
+        const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
+        const confirmPasswordInput = document.getElementById('{{ form.password2.id_for_label }}');
+        const strengthIndicator = document.getElementById('passwordStrength');
+        const passwordMatchHint = document.getElementById('passwordMatch');
+
+        passwordInput.addEventListener('input', function () {
+            const password = this.value;
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            strengthIndicator.className = 'password-strength';
+            if (password.length === 0) {
+                // ничего не показываем
+            } else if (strength <= 1) {
+                strengthIndicator.classList.add('weak');
+            } else if (strength === 2) {
+                strengthIndicator.classList.add('medium');
+            } else if (strength === 3) {
+                strengthIndicator.classList.add('strong');
+            } else {
+                strengthIndicator.classList.add('very-strong');
+            }
+            checkPasswordMatch();
+        });
+
+        // ===== ПРОВЕРКА СОВПАДЕНИЯ ПАРОЛЕЙ =====
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (confirmPassword.length === 0) {
+                passwordMatchHint.textContent = '';
+                confirmPasswordInput.classList.remove('error', 'success');
+                return;
+            }
+
+            if (password === confirmPassword) {
+                passwordMatchHint.textContent = '✓ Пароли совпадают';
+                passwordMatchHint.className = 'form-hint success';
+                confirmPasswordInput.classList.remove('error');
+                confirmPasswordInput.classList.add('success');
+            } else {
+                passwordMatchHint.textContent = '✗ Пароли не совпадают';
+                passwordMatchHint.className = 'form-hint error';
+                confirmPasswordInput.classList.remove('success');
+                confirmPasswordInput.classList.add('error');
+            }
+        }
+
+        // ===== МАСКА ДЛЯ ТЕЛЕФОНА =====
+        const phoneInput = document.getElementById('{{ form.phone.id_for_label }}');
+        phoneInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value[0] === '7' || value[0] === '8') {
+                    value = value.substring(1);
+                }
+                let formatted = '+7';
+                if (value.length > 0) formatted += ' (' + value.substring(0, 3);
+                if (value.length >= 3) formatted += ') ' + value.substring(3, 6);
+                if (value.length >= 6) formatted += '-' + value.substring(6, 8);
+                if (value.length >= 8) formatted += '-' + value.substring(8, 10);
+                e.target.value = formatted;
+            }
+        });
+
+        // ===== ПРОВЕРКА ФОРМЫ ПЕРЕД ОТПРАВКОЙ =====
+        document.getElementById('registrationForm').addEventListener('submit', function (e) {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                e.preventDefault();
+                alert('Пароли не совпадают!');
+                return false;
+            }
+            if (passwordInput.value.length < 8) {
+                e.preventDefault();
+                alert('Пароль должен содержать минимум 8 символов!');
+                return false;
+            }
+            if (!document.getElementById('agreeTerms').checked) {
+                e.preventDefault();
+                alert('Необходимо согласиться с условиями использования.');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

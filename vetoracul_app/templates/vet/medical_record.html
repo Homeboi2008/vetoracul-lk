@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}{% if object %}Редактировать папку{% else %}Новая папка{% endif %}{% endblock %}
+{% block title %}Новая медицинская запись{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>{% if object %}Редактировать папку{% else %}Новая папка{% endif %}</h1>
+    <h1>Новая медицинская запись</h1>
+    <p class="page-subtitle">Пациент: {{ pet.name }}</p>
 </div>
 
-<div class="settings-card" style="max-width:600px;">
+<div class="settings-card" style="max-width:700px;">
     <form method="post" class="pet-form">
         {% csrf_token %}
         {% for field in form %}
@@ -17,7 +18,7 @@
             </div>
         {% endfor %}
         <div class="form-actions">
-            <a href="{% url 'folder_list' %}" class="btn btn-secondary">Отмена</a>
+            <a href="{% url 'vet_patient_card' pet.pk %}" class="btn btn-secondary">Отмена</a>
             <button type="submit" class="btn btn-primary">Сохранить</button>
         </div>
     </form>

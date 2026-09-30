@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация ветеринара — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+</head>
+<body>
+<div class="reg-page">
+    <aside class="reg-branding">
+        <div class="branding-content">
+            <div class="branding-logo">
+                <span class="branding-logo-icon">🐾</span>
+                <span class="branding-logo-text">ВетОракул</span>
+            </div>
+            <h1 class="branding-title">Регистрация врача</h1>
+            <p class="branding-subtitle">Присоединяйтесь к профессиональному сообществу ВетОракул</p>
+            <div class="branding-footer"><p>© 2026 ВетОракул</p></div>
+        </div>
+    </aside>
+    <main class="reg-form-section">
+        <div class="reg-form-wrapper">
+            <div class="reg-form-container">
+                <div class="reg-form-header">
+                    <h2 class="reg-form-title">Регистрация врача</h2>
+                    <p class="reg-form-subtitle">Заполните данные для верификации аккаунта</p>
+                </div>
+                <form method="post" class="reg-form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<p class="form-hint">{{ field.help_text|safe }}</p>{% endif %}
+                            {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-submit">
+                        <span>Зарегистрироваться</span><span class="btn-arrow">→</span>
+                    </button>
+                    <div class="reg-form-footer">
+                        <p>Уже есть аккаунт? <a href="{% url 'login' %}" class="login-link">Войти</a></p>
+                        <p style="margin-top:8px;">Вы клиент? <a href="{% url 'register' %}" class="login-link">Регистрация клиента</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

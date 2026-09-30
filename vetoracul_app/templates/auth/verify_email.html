@@ -1,27 +1,50 @@
-{% extends 'auth/base.html' %}
-{% block title %}Подтверждение email{% endblock %}
-{% block content %}
-<div class="auth-card">
-    <h2 class="text-center">📧 Подтверждение email</h2>
-    <p class="text-muted text-center">Введите 6-значный код, отправленный на ваш email.</p>
-    <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="text-danger small">{{ field.errors }}</div>
-                {% endif %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение email — ВетОракул</title>
+    <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+</head>
+<body>
+<div class="reg-page">
+    <aside class="reg-branding">
+        <div class="branding-content">
+            <h1 class="branding-title">Подтверждение email</h1>
+            <p class="branding-subtitle">Введите код, отправленный на вашу почту</p>
+        </div>
+    </aside>
+    <main class="reg-form-section reg-form-section--centered">
+        <div class="reg-form-wrapper">
+            <div class="reg-form-container">
+                <div class="reg-form-header">
+                    <h2 class="reg-form-title">Введите код</h2>
+                    <p class="reg-form-subtitle">6-значный код отправлен на ваш email</p>
+                </div>
+                <form method="post" class="reg-form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-submit"><span>Подтвердить</span></button>
+                </form>
+                <hr style="margin:20px 0;border:none;border-top:1px solid #e0d6f0;">
+                <form method="post" action="{% url 'resend_code' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-submit" style="background:#f5f0ff;color:#2d1b4e;box-shadow:none;">
+                        Отправить код повторно
+                    </button>
+                </form>
+                <div class="reg-form-footer" style="margin-top:16px;">
+                    <p><a href="{% url 'login' %}" class="login-link">Уже есть аккаунт? Войти</a></p>
+                </div>
             </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Подтвердить</button>
-    </form>
-    <hr>
-    <form method="post" action="{% url 'resend_code' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-secondary w-100">Отправить код повторно</button>
-    </form>
-    <p class="text-center mt-3"><a href="{% url 'login' %}">Уже есть аккаунт? Войти</a></p>
+        </div>
+    </main>
 </div>
-{% endblock %}
+</body>
+</html>

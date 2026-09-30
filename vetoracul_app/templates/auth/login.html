@@ -1,25 +1,187 @@
-{% extends 'auth/base.html' %}
-{% block title %}Вход{% endblock %}
-{% block content %}
-<div class="auth-card">
-    <h2 class="text-center">🔐 Вход</h2>
-    <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="text-danger small">{{ field.errors }}</div>
-                {% endif %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+</head>
+<body>
+    <div class="reg-page">
+
+        <!-- Левая колонка — брендинг -->
+        <aside class="reg-branding">
+            <div class="branding-content">
+                <div class="branding-logo">
+                    <span class="branding-logo-icon">🐾</span>
+                    <span class="branding-logo-text">ВетОракул</span>
+                </div>
+
+                <h1 class="branding-title">С возвращением!</h1>
+                <p class="branding-subtitle">Войдите в свой аккаунт для доступа к сервису</p>
+
+                <div class="branding-features">
+                    <div class="feature-item">
+                        <div class="feature-icon feature-icon--clipboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                                <path d="M9 14l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Карточки питомцев</h3>
+                            <p>Вся информация о здоровье в одном месте</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon feature-icon--document">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Документы</h3>
+                            <p>Анализы, рецепты и обследования</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon feature-icon--calendar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                <circle cx="12" cy="15" r="2" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Напоминания</h3>
+                            <p>Не пропускайте вакцинации</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon feature-icon--family">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 010 7.75"/>
+                            </svg>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Доступ для семьи</h3>
+                            <p>Делитесь данными с близкими</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="branding-footer">
+                    <p>© 2026 ВетОракул. Все права защищены.</p>
+                </div>
             </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Войти</button>
-        <div class="mt-3 text-center">
-            <a href="{% url 'password_reset' %}">Забыли пароль?</a>
-        </div>
-        <hr>
-        <p class="text-center mb-0">Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
-    </form>
-</div>
-{% endblock %}
+        </aside>
+
+        <!-- Правая колонка — форма -->
+        <main class="reg-form-section">
+            <div class="reg-form-container">
+                <div class="reg-form-header">
+                    <h2 class="reg-form-title">Вход в аккаунт</h2>
+                    <p class="reg-form-subtitle">Введите email и пароль для входа</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="form-hint {% if message.tags == 'error' %}error{% else %}success{% endif %}" style="margin-bottom:12px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form class="reg-form" method="post" id="loginForm" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="form-hint error" style="margin-bottom:12px;">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.username.id_for_label }}">Email или логин</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="form-hint error">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.password.id_for_label }}">Пароль</label>
+                        <div class="password-input-wrapper">
+                            {{ form.password }}
+                            <button type="button" class="password-toggle" onclick="togglePassword('{{ form.password.id_for_label }}', this)">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="form-hint error">{{ form.password.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remember_me" id="rememberMe">
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">Запомнить меня</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-submit">
+                        <span>Войти</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+
+                    <div class="form-divider">
+                        <span>или</span>
+                    </div>
+
+                    <a href="{% url 'password_reset' %}" class="forgot-link">Забыли пароль?</a>
+
+                    <div class="reg-form-footer">
+                        <p>Нет аккаунта? <a href="{% url 'register' %}" class="login-link">Зарегистрироваться</a></p>
+                        <p style="margin-top: 8px;">Вы ветеринар? <a href="{% url 'register_vet' %}" class="login-link">Зарегистрироваться как врач</a></p>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // Переключение видимости пароля
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const eyeIcon = button.querySelector('.eye-icon');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>

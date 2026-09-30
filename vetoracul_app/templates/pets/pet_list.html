@@ -1,44 +1,80 @@
-{% extends 'auth/base.html' %}
+{% extends 'base.html' %}
+{% block title %}Мои питомцы{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>🐾 Мои питомцы</h2>
+<section class="page active">
+    <div class="page-header">
+        <h1>Мои питомцы</h1>
         {% if user.role == 'user' %}
-            <a href="{% url 'pet_add' %}" class="btn btn-primary">+ Добавить питомца</a>
+            <a href="{% url 'pet_add' %}" class="btn btn-primary">
+                <span>➕</span><span>Добавить питомца</span>
+            </a>
         {% endif %}
     </div>
 
-    {% if pets %}
-        <div class="row">
-            {% for pet in pets %}
-                <div class="col-md-4 mb-3">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ pet.name }}</h5>
-                            <p class="card-text mb-1"><small class="text-muted">{{ pet.animal_type }} • {{ pet.get_gender_display }}</small></p>
-                            {% if pet.age %}<p class="card-text mb-1">Возраст: {{ pet.age }} лет</p>{% endif %}
-                            <p class="card-text mb-1">Вес: {{ pet.weight }} кг</p>
-                            {% if pet.current_diagnosis %}
-                                <p class="card-text"><small>Диагноз: {{ pet.current_diagnosis|truncatechars:40 }}</small></p>
-                            {% endif %}
+    <div class="pets-grid">
+        {% for pet in pets %}
+            <div class="pet-card">
+                <div class="pet-card__header">
+                    <div class="pet-card__avatar pet-card__avatar--letter">
+                        <div class="pet-mini-avatar pet-mini-avatar--blue">
+                            <span class="pet-mini-letter">{{ pet.name|slice:":1"|upper }}</span>
                         </div>
-                        <div class="card-footer bg-white border-0">
-                            <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-sm btn-primary">Открыть</a>
-                            {% if pet.owner == user %}
-                                <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
-                            {% endif %}
+                    </div>
+                    <div class="pet-card__info">
+                        <h3 class="pet-card__name">{{ pet.name }}</h3>
+                        <p class="pet-card__breed">
+                            {{ pet.animal_type }} • {{ pet.get_gender_display }}
+                            {% if pet.age %} • {{ pet.age }} лет{% endif %}
+                        </p>
+                    </div>
+                    <span class="pet-card__status status-active">Активен</span>
+                </div>
+
+                <div class="pet-card__body">
+                    <div class="pet-card__section">
+                        <h4 class="section-title">👤 Владелец</h4>
+                        <div class="info-row">
+                            <span class="info-label">ФИО:</span>
+                            <span class="info-value">{{ pet.owner.get_full_name|default:pet.owner.username }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Телефон:</span>
+                            <span class="info-value">{{ pet.owner.phone|default:"—" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="pet-card__section">
+                        <h4 class="section-title">🩺 Медицинские данные</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Вес</span>
+                                <span class="info-value">{{ pet.weight }} кг</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Диагноз</span>
+                                <span class="info-value highlight">{{ pet.current_diagnosis|default:"Здоров"|truncatechars:40 }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            У вас пока нет питомцев.
-            {% if user.role == 'user' %}
-                <a href="{% url 'pet_add' %}" class="alert-link">Добавьте первого питомца</a>.
-            {% endif %}
-        </div>
-    {% endif %}
-</div>
+
+                <div class="pet-card__footer">
+                    <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-secondary">Открыть</a>
+                    {% if pet.owner == user %}
+                        <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-primary">Изменить</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="docs-empty" style="grid-column:1/-1;">
+                <h3 class="empty-title">У вас пока нет питомцев</h3>
+                <p class="empty-text">Добавьте первого питомца, чтобы начать работу</p>
+                {% if user.role == 'user' %}
+                    <a href="{% url 'pet_add' %}" class="btn btn-primary" style="margin-top:16px;">+ Добавить питомца</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}
