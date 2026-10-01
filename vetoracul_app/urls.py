@@ -1,12 +1,16 @@
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib.auth.views import (
     PasswordResetDoneView, PasswordResetCompleteView
 )
 from . import views
 
+
+
 urlpatterns = [
     # Главная
-    path('', views.HomeView.as_view(), name='home'),
+    path('', views.home_view, name='home'),
 
     # Аутентификация
     path('register/', views.RegisterView.as_view(), name='register'),
@@ -66,4 +70,9 @@ urlpatterns = [
     path('vet/', views.VetDashboardView.as_view(), name='vet_dashboard'),
     path('vet/patient/<int:pk>/', views.VetPatientCardView.as_view(), name='vet_patient_card'),
     path('vet/patient/<int:pet_pk>/record/add/', views.VetMedicalRecordCreateView.as_view(), name='vet_medical_record_add'),
-]
+    
+    path('document/<int:pk>/share/', views.document_share, name='document_share'),
+    path('share/<uuid:token>/', views.document_public, name='document_public'),
+    path('document/<int:pk>/unshare/', views.document_unshare, name='document_unshare'),
+    path('document/<int:pk>/move/', views.document_move, name='document_move'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

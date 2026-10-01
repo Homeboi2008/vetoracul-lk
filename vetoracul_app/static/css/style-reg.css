@@ -454,7 +454,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 14px rgba(45, 27, 78, 0.25);
+  /* box-shadow: 0 4px 14px rgba(45, 27, 78, 0.25); */
   margin-top: 4px;
 }
 
@@ -734,7 +734,7 @@ html, body {
 /* Правая колонка — ЛИСТАЕТСЯ */
 .reg-form-section {
   display: flex;
-  align-items: flex-start; /* Начинаем сверху, а не по центру */
+  align-items: center; /* Начинаем сверху, а не по центру */
   justify-content: center;
   padding: 40px 40px 40px 24px; /* Справа больше отступа для скролла */
   background: var(--color-bg);

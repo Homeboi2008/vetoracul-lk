@@ -18,3 +18,13 @@ class DatabaseSettings:
     DATABASE_HOST = env.get("DATABASE_HOST", None)
     DATABASE_PORT = int(env.get("DATABASE_PORT", 3306))
     
+class EmailSettings:
+    EMAIL_BACKEND = env.get('EMAIL_BACKEND')
+    EMAIL_HOST = env.get('EMAIL_HOST')
+    EMAIL_PORT = int(env.get('EMAIL_PORT'))
+    EMAIL_HOST_USER = env.get('EMAIL_USER')
+    EMAIL_HOST_PASSWORD = env.get('EMAIL_PASSWORD')
+    EMAIL_USE_TLS = bool(int(env.get('EMAIL_USE_TLS')))
+    EMAIL_USE_SSL = bool(int(env.get('EMAIL_USE_SSL')))
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+    

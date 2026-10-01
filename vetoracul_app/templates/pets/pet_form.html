@@ -6,6 +6,20 @@
     <div class="form-header-block">
         <h1 class="form-title">{% if object %}Редактирование питомца{% else %}Новый питомец{% endif %}</h1>
     </div>
+    <div class="photo-upload">
+        <div class="photo-preview" id="photoPreview">
+            {% if object and object.photo %}
+                <img src="{{ object.photo.url }}" alt="{{ object.name }}" class="photo-preview-img">
+            {% else %}
+                <span class="photo-placeholder-icon">📷</span>
+                <span class="photo-placeholder-text">Добавить фото</span>
+            {% endif %}
+        </div>
+        <input type="file" id="petPhoto" accept="image/*" name="photo" class="photo-input" onchange="previewPhoto(event)" style="display:none;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('petPhoto').click()">
+            {% if object and object.photo %}Изменить фото{% else %}Выбрать файл{% endif %}
+        </button>
+    </div>
     <form method="post" enctype="multipart/form-data" class="pet-form">
         {% csrf_token %}
         {% for field in form %}
@@ -22,4 +36,20 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewPhoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = `<img src="${e.target.result}" class="photo-preview-img" alt="">`;
+            preview.classList.add('has-image');
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
 {% endblock %}

@@ -143,16 +143,26 @@ class VerificationCodeForm(forms.Form):
 class PetForm(forms.ModelForm):
     class Meta:
         model = Pet
-        fields = ('name', 'animal_type', 'gender', 'birth_date', 'weight', 'co_owners')
+        fields = (
+            'name', 'animal_type', 'breed', 'gender', 'birth_date',
+            'weight', 'health_status', 'photo', 'co_owners'
+        )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        apply_input_classes(self.fields, select_fields={'gender', 'co_owners'})
+        apply_input_classes(
+            self.fields,
+            select_fields={'gender', 'health_status', 'co_owners'}
+        )
         if self.user:
-            self.fields['co_owners'].queryset = User.objects.filter(role='user').exclude(pk=self.user.pk)
+            self.fields['co_owners'].queryset = (
+                User.objects.filter(role='user').exclude(pk=self.user.pk)
+            )
         self.fields['co_owners'].required = False
         self.fields['birth_date'].required = False
+        self.fields['breed'].required = False
+        self.fields['photo'].required = False
 
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')

@@ -1,5 +1,5 @@
 from pathlib import Path
-from Config import DjangoSettings, DatabaseSettings
+from Config import DjangoSettings, DatabaseSettings, EmailSettings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,6 +10,11 @@ DEBUG = not DjangoSettings.IS_PRODUCTION
 
 ALLOWED_HOSTS = DjangoSettings.ALLOWED_HOSTS
 CSRF_TRUSTED_ORIGINS = DjangoSettings.CSRF_TRUSTED_ORIGINS
+
+if not DjangoSettings.IS_PRODUCTION:
+    STATICFILES_DIRS = DjangoSettings.STATICFILES_DIRS
+else:
+    STATIC_ROOT = DjangoSettings.STATIC_ROOT
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -98,8 +103,16 @@ AUTH_USER_MODEL = 'vetoracul_app.User'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@vetclinisdac.ru'
+EMAIL_BACKEND =  EmailSettings.EMAIL_BACKEND
+EMAIL_HOST = EmailSettings.EMAIL_HOST
+EMAIL_PORT = EmailSettings.EMAIL_PORT
+EMAIL_HOST_USER = EmailSettings.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = EmailSettings.EMAIL_HOST_PASSWORD
+EMAIL_USE_TLS = EmailSettings.EMAIL_USE_TLS
+EMAIL_USE_SSL = EmailSettings.EMAIL_USE_SSL
+DEFAULT_FROM_EMAIL = EmailSettings.DEFAULT_FROM_EMAIL
+
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
@@ -109,3 +122,6 @@ AUTHENTICATION_BACKENDS = [
     'vetoracul_app.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

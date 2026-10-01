@@ -1,73 +1,1697 @@
-{% extends 'base.html' %}
 {% load static %}
-{% block title %}Панель управления — ВетОракул{% endblock %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <style>
+        .reminder-action-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 6px 8px;
+            border-radius: 8px;
+            opacity: 0.7;
+            transition: all 0.15s;
+        }
+        .reminder-action-btn:hover {
+            background: #f5f0ff;
+            opacity: 1;
+        }
+        .reminder-action-btn--danger:hover {
+            background: #fee2e2;
+        }
+        /* Модальные окна (локально для home.html) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 27, 78, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 520px;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 16px 48px rgba(45, 27, 78, 0.15);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px; right: 16px;
+            width: 32px; height: 32px;
+            border: none;
+            background: #f5f0ff;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b5b8a;
+        }
+        .modal-close:hover { background: #e0d6f0; }
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2d1b4e;
+            margin: 0 0 20px 0;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2d1b4e;
+            margin-bottom: 6px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e0d6f0;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { border-color: #6b46c1; }
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+        .trash-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border: 1px solid #e0d6f0;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            background: #f5f0ff;
+        }
+        .trash-item__info { flex: 1; }
+        .trash-item__name {
+            font-weight: 600;
+            color: #2d1b4e;
+            font-size: 0.9rem;
+        }
+        .trash-item__meta {
+            font-size: 0.75rem;
+            color: #6b5b8a;
+            margin-top: 2px;
+        }
+        .doc-card__delete {
+            background: transparent;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+        }
+        .doc-card__delete:hover { background: #fee2e2; }
+                /* Контекстное меню документа */
+        .doc-context-menu {
+            position: fixed;
+            z-index: 3000;
+            background: #ffffff;
+            border: 1px solid #e0d6f0;
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(45, 27, 78, 0.18);
+            padding: 6px;
+            min-width: 180px;
+            display: none;
+        }
+        .doc-context-menu.active { display: block; }
+        .doc-context-menu__item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #2d1b4e;
+            transition: background 0.15s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+        .doc-context-menu__item:hover { background: #f5f0ff; }
+        .doc-context-menu__item--danger { color: #dc2626; }
+        .doc-context-menu__item--danger:hover { background: #fee2e2; }
+        .doc-context-menu__divider {
+            height: 1px;
+            background: #e0d6f0;
+            margin: 4px 6px;
+        }
+        .doc-card { position: relative; }
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            color: #6b5b8a;
+            flex-wrap: wrap;
+        }
+        .breadcrumbs__item {
+            color: #6b46c1;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+        .breadcrumbs__item:hover { background: #f5f0ff; }
+        .breadcrumbs__item--current {
+            color: #2d1b4e;
+            cursor: default;
+            font-weight: 700;
+        }
+        .breadcrumbs__item--current:hover { background: transparent; }
+        .breadcrumbs__separator { color: #b8a8d9; }
 
-{% block content %}
-<section class="page active">
-    <div class="dashboard-header">
-        <h1>Панель управления</h1>
-        <p class="dashboard-subtitle">Сводка по вашим питомцам</p>
-    </div>
-
-    <div class="stats-grid">
-        <div class="stat-card stat-card--pets">
-            <div class="stat-card__top">
-                <span class="stat-card__title">Всего питомцев</span>
-                <span class="stat-card__icon">🐾</span>
-            </div>
-            <div class="stat-card__value">{{ stats.pets }}</div>
-        </div>
-        <div class="stat-card stat-card--docs">
-            <div class="stat-card__top">
-                <span class="stat-card__title">Документов</span>
-                <span class="stat-card__icon">📄</span>
-            </div>
-            <div class="stat-card__value">{{ stats.documents }}</div>
-        </div>
-        <div class="stat-card stat-card--reminders">
-            <div class="stat-card__top">
-                <span class="stat-card__title">Напоминаний</span>
-                <span class="stat-card__icon">⏰</span>
-            </div>
-            <div class="stat-card__value">{{ stats.reminders }}</div>
-        </div>
-    </div>
-
-    <div class="dashboard-section">
-        <h2 class="section-heading">Ваши питомцы</h2>
-        <div class="pets-mini-grid">
-            {% for pet in pets %}
-                <a href="{% url 'pet_detail' pet.pk %}" class="pet-mini-card" style="text-decoration:none;color:inherit;">
-                    <div class="pet-mini-avatar pet-mini-avatar--blue">
-                        <span class="pet-mini-letter">{{ pet.name|slice:":1"|upper }}</span>
-                    </div>
-                    <div class="pet-mini-info">
-                        <h3 class="pet-mini-name">{{ pet.name }}</h3>
-                        <p class="pet-mini-breed">{{ pet.animal_type }}</p>
-                    </div>
-                </a>
-            {% empty %}
-                <p class="text-muted">У вас пока нет питомцев. <a href="{% url 'pet_add' %}">Добавить</a></p>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="dashboard-section">
-        <h2 class="section-heading">Ближайшие напоминания</h2>
-        <div class="reminders-list">
-            {% for r in upcoming_reminders %}
-                <div class="reminder-item">
-                    <div class="reminder-icon reminder-icon--blue">📅</div>
-                    <div class="reminder-info">
-                        <h4 class="reminder-title">{{ r.title }}</h4>
-                        <p class="reminder-time">{{ r.date }} • {{ r.pet.name }}</p>
-                    </div>
-                    <span class="reminder-status reminder-status--upcoming">{{ r.get_status_display }}</span>
+        .folders-section { margin-bottom: 24px; }
+        .folders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+        .folder-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            background: linear-gradient(135deg, #f5f0ff 0%, #ede9fe 100%);
+            border: 1px solid #e0d6f0;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .folder-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(45, 27, 78, 0.1);
+            border-color: #c4b5fd;
+        }
+        .folder-card__icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+        .folder-card__info { flex: 1; min-width: 0; }
+        .folder-card__name {
+            font-weight: 600;
+            color: #2d1b4e;
+            font-size: 0.95rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .folder-card__meta {
+            font-size: 0.75rem;
+            color: #6b5b8a;
+            margin-top: 2px;
+        }
+        .folder-card__delete {
+            background: transparent;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .folder-card:hover .folder-card__delete { opacity: 1; }
+        .folder-card__delete:hover { background: #fee2e2; }
+        .filter-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding: 10px 40px 10px 18px;
+            border: 1px solid #e0d6f0;
+            border-radius: 999px;
+            background: #ffffff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%236b46c1' d='M6 8L1 3h10z'/></svg>") no-repeat right 16px center;
+            color: #2d1b4e;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 180px;
+            max-width: 260px;
+            outline: none;
+        }
+        .filter-select:hover {
+            background-color: #f5f0ff;
+            border-color: #c4b5fd;
+        }
+        .filter-select:focus {
+            border-color: #6b46c1;
+            box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+        }
+        .filter-select option {
+            padding: 8px;
+            color: #2d1b4e;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-ic">🐾</span>
+                    <span class="logo-text">ВетОракул</span>
                 </div>
-            {% empty %}
-                <p class="text-muted" style="padding:20px;">Нет предстоящих напоминаний.</p>
-            {% endfor %}
+                <div class="search">
+                    <input type="text" placeholder="Поиск">
+                </div>
+                <div class="user-actions">
+                    <div class="notifications-wrapper">
+                        <button class="notification-btn" onclick="toggleNotifications()" title="Уведомления">
+                            🔔
+                            <span class="notification-badge">{{ upcoming_reminders|length }}</span>
+                        </button>
+                        <div class="notifications-panel" id="notificationsPanel">
+                            <div class="notifications-panel__header">
+                                <h4 class="notifications-panel__title">Уведомления</h4>
+                                <button class="notifications-panel__clear" onclick="stubAction('Очистка уведомлений')">Очистить</button>
+                            </div>
+                            <div class="notifications-panel__divider"></div>
+                            {% if upcoming_reminders %}
+                                <div class="notifications-list">
+                                    {% for r in upcoming_reminders %}
+                                        <div class="user-detail-row" style="padding:10px 0;">
+                                            <span class="row-icon">⏰</span>
+                                            <div>
+                                                <div style="font-weight:500;">{{ r.title }}</div>
+                                                <div style="font-size:0.8rem;color:var(--color-text-secondary);">
+                                                    {{ r.date }} • {{ r.pet.name }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="notifications-empty">
+                                    <div class="empty-icon">🔔</div>
+                                    <p class="empty-text">Уведомлений нет</p>
+                                    <p class="empty-subtext">Здесь будут отображаться напоминания о приемах</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="user-avatar-wrapper">
+                        <div class="user-avatar" onclick="toggleUserPanel()" title="Профиль">
+                            {{ user.get_full_name|default:user.username|slice:":2"|upper }}
+                        </div>
+                        <div class="user-panel" id="userPanel">
+                            <div class="user-panel__header">
+                                <div class="user-panel__avatar">
+                                    {{ user.get_full_name|default:user.username|slice:":2"|upper }}
+                                </div>
+                                <div>
+                                    <h4 class="user-panel__name">{{ user.get_full_name|default:user.username }}</h4>
+                                    <span class="user-panel__role">{{ user.get_role_display }}</span>
+                                </div>
+                            </div>
+                            <div class="user-panel__divider"></div>
+                            <div class="user-panel__details">
+                                <div class="user-detail-row">
+                                    <span class="row-icon">📱</span>
+                                    <span>{{ user.phone|default:"—" }}</span>
+                                </div>
+                                <div class="user-detail-row">
+                                    <span class="row-icon">✉️</span>
+                                    <span>{{ user.email }}</span>
+                                </div>
+                                <div class="user-detail-row">
+                                    <span class="row-icon">📍</span>
+                                    <span>{{ user.city|default:"—" }}</span>
+                                </div>
+                            </div>
+                            <div class="user-panel__divider"></div>
+                            <a href="{% url 'profile' %}" class="btn btn-secondary" style="width:100%;">⚙️ Настройки профиля</a>
+                            <form method="post" action="{% url 'logout' %}" style="width:100%;margin-top:8px;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline" style="width:100%;">Выйти</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <nav class="menu">
+                    <div class="menu-section">
+                        <h3>Меню</h3>
+                        <ul>
+                            <li class="menu-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                                <span class="icon">📊</span><span>Панель</span>
+                            </li>
+                            <li class="menu-item" data-page="pets" onclick="switchPage('pets')">
+                                <span class="icon">🐾</span><span>Питомцы</span>
+                            </li>
+                            <li class="menu-item" data-page="documents" onclick="switchPage('documents')">
+                                <span class="icon">📁</span><span>Документы</span>
+                            </li>
+                            <li class="menu-item" data-page="reminders" onclick="switchPage('reminders')">
+                                <span class="icon">⏰</span><span>Напоминания</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="menu-section">
+                        <h3>Настройки</h3>
+                        <ul>
+                            <li class="menu-item" data-page="settings" onclick="switchPage('settings')">
+                                <span class="icon">⚙️</span><span>Параметры</span>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="content">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" style="padding:12px 20px;border-radius:12px;margin-bottom:16px;
+                            {% if message.tags == 'success' %}background:#d1fae5;color:#065f46;
+                            {% elif message.tags == 'error' %}background:#fee2e2;color:#991b1b;
+                            {% else %}background:#e0e7ff;color:#3730a3;{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- ============ ПАНЕЛЬ ============ -->
+                <section class="page active" id="dashboard">
+                    <div class="dashboard-header">
+                        <h1>Панель управления</h1>
+                        <p class="dashboard-subtitle">Сводка по вашим питомцам и предстоящим событиям</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card stat-card--pets">
+                            <div class="stat-card__top">
+                                <span class="stat-card__title">Всего питомцев</span>
+                                <span class="stat-card__icon">🐾</span>
+                            </div>
+                            <div class="stat-card__value">{{ stats.pets }}</div>
+                        </div>
+                        <div class="stat-card stat-card--docs">
+                            <div class="stat-card__top">
+                                <span class="stat-card__title">Документов</span>
+                                <span class="stat-card__icon">📄</span>
+                            </div>
+                            <div class="stat-card__value">{{ stats.documents }}</div>
+                        </div>
+                        <div class="stat-card stat-card--reminders">
+                            <div class="stat-card__top">
+                                <span class="stat-card__title">Напоминаний</span>
+                                <span class="stat-card__icon">⏰</span>
+                            </div>
+                            <div class="stat-card__value">{{ stats.reminders }}</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h2 class="section-heading">Ваши питомцы</h2>
+                        <div class="pets-mini-grid">
+                            {% for pet in pets %}
+                                <a href="{% url 'pet_detail' pet.pk %}" class="pet-mini-card" style="text-decoration:none;color:inherit;">
+                                    <div class="pet-mini-avatar {% cycle 'pet-mini-avatar--blue' 'pet-mini-avatar--purple' %}">
+                                        <span class="pet-mini-letter">{{ pet.name|slice:":1"|upper }}</span>
+                                    </div>
+                                    <div class="pet-mini-info">
+                                        <h3 class="pet-mini-name">{{ pet.name }}</h3>
+                                        <p class="pet-mini-breed">{{ pet.animal_type }}</p>
+                                    </div>
+                                </a>
+                            {% empty %}
+                                <p class="text-muted">У вас пока нет питомцев. <a href="{% url 'pet_add' %}">Добавить</a></p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h2 class="section-heading">Ближайшие напоминания</h2>
+                        <div class="reminders-list">
+                            {% for r in upcoming_reminders %}
+                                <div class="reminder-item">
+                                    <div class="reminder-icon reminder-icon--blue">
+                                        {% if r.reminder_type == 'vaccination' %}💉{% elif r.reminder_type == 'medication' %}💊{% else %}📅{% endif %}
+                                    </div>
+                                    <div class="reminder-info">
+                                        <h4 class="reminder-title">{{ r.title }}</h4>
+                                        <p class="reminder-time">{{ r.date }}{% if r.time %} • {{ r.time|time:"H:i" }}{% endif %} • {{ r.pet.name }}</p>
+                                    </div>
+                                    <span class="reminder-status reminder-status--upcoming">{{ r.get_status_display }}</span>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted" style="padding:20px;">Нет предстоящих напоминаний.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ ПИТОМЦЫ ============ -->
+                <section class="page" id="pets">
+                    <div class="page-header">
+                        <h1>Мои питомцы</h1>
+                        <a href="{% url 'pet_add' %}" class="btn btn-primary">
+                            <span>➕</span><span>Добавить питомца</span>
+                        </a>
+                    </div>
+
+                    <div class="pets-grid">
+                        {% for pet in pets %}
+                            <div class="pet-card">
+                                <div class="pet-card__header">
+                                    <div class="pet-card__avatar">
+                                        {% if pet.photo %}
+                                            <img src="{{ pet.photo.url }}" alt="{{ pet.name }}">
+                                        {% else %}
+                                            <div class="pet-card__avatar-placeholder">
+                                                <span>{{ pet.name|slice:":1"|upper }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="pet-card__info">
+                                        <h3 class="pet-card__name">{{ pet.name }}</h3>
+                                        <p class="pet-card__breed">
+                                            {{ pet.animal_type }}{% if pet.breed %}, {{ pet.breed }}{% endif %}
+                                            • {% if pet.gender == 'M' %}♂{% else %}♀{% endif %}
+                                            {% if pet.age %} • {{ pet.age }} лет{% endif %}
+                                        </p>
+                                    </div>
+                                    <span class="pet-card__status {{ pet.health_status_class }}">
+                                        {{ pet.get_health_status_display }}
+                                    </span>
+                                </div>
+
+                                <div class="pet-card__body">
+                                    <!-- Владелец -->
+                                    <div class="pet-card__section">
+                                        <h4 class="section-title">👤 Владелец</h4>
+                                        <div class="info-row">
+                                            <span class="info-label">ФИО:</span>
+                                            <span class="info-value">{{ pet.owner.get_full_name|default:pet.owner.username }}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Телефон:</span>
+                                            <span class="info-value">{{ pet.owner.phone|default:"—" }}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Почта:</span>
+                                            <span class="info-value">{{ pet.owner.email }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Медицинские данные -->
+                                    <div class="pet-card__section">
+                                        <h4 class="section-title">🩺 Медицинские данные</h4>
+                                        <div class="info-grid">
+                                            <div class="info-item">
+                                                <span class="info-label">Вес</span>
+                                                <span class="info-value">{{ pet.weight }} кг</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="info-label">Диагноз</span>
+                                                <span class="info-value highlight">{{ pet.current_diagnosis|default:"Нет данных"|truncatechars:40 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Документы о лечении -->
+                                    <div class="pet-card__section">
+                                        <h4 class="section-title">📎 Документы о лечении</h4>
+                                        <div class="documents-list">
+                                            {% for doc in pet.documents.all %}
+                                                {% if not doc.is_deleted %}
+                                                    {% if forloop.counter <= 3 %}
+                                                        <div class="document-item" onclick="window.open('{{ doc.file.url }}', '_blank')">
+                                                            <span class="doc-icon">📄</span>
+                                                            <div class="doc-info">
+                                                                <span class="doc-name">{{ doc.title|default:doc.file.name|truncatechars:30 }}</span>
+                                                                <span class="doc-size">{{ doc.date|date:"d.m.Y" }}</span>
+                                                            </div>
+                                                            <span class="doc-action">⬇️</span>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% empty %}
+                                                <p class="text-muted" style="font-size:0.85rem;">Документов нет</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pet-card__footer">
+                                    <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-secondary">✏️ Изменить</a>
+                                    <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-primary">📅 Открыть</a>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="docs-empty" style="grid-column:1/-1;">
+                                <h3 class="empty-title">У вас пока нет питомцев</h3>
+                                <p class="empty-text">Добавьте первого питомца, чтобы начать работу</p>
+                                <a href="{% url 'pet_add' %}" class="btn btn-primary" style="margin-top:16px;">+ Добавить питомца</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- ============ ДОКУМЕНТЫ ============ -->
+                <section class="page" id="documents">
+                    <div class="page-header">
+                        <div>
+                            <h1>Документы</h1>
+                            <p class="page-subtitle">Все медицинские документы ваших питомцев в одном месте</p>
+                        </div>
+                        <div style="display:flex;gap:10px;">
+                            <button type="button" class="btn btn-secondary" onclick="openTrashModal()">
+                                🗑 Корзина{% if deleted_documents %} ({{ deleted_documents|length }}){% endif %}
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="openFolderModal()">
+                                <span>📁</span><span>Создать папку</span>
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="openUploadModal()">
+                                <span>⬆️</span><span>Загрузить документ</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Хлебные крошки -->
+                    <div class="breadcrumbs" id="breadcrumbs"></div>
+
+                    <div class="docs-toolbar">
+                        <div class="docs-search">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="docsSearchInput" placeholder="Поиск по названию или питомцу (по всем папкам)..." oninput="filterDocuments()">
+                        </div>
+                        <div class="docs-filters">
+                            <select class="filter-select" id="petFilterSelect" onchange="setFilterValue(this.value)">
+                                <option value="all">Все питомцы</option>
+                                {% for p in pets_filter %}
+                                    <option value="pet-{{ p.id }}">{{ p.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="docs-view-switch">
+                            <button class="view-btn active" data-view="grid" onclick="setView('grid', this)" title="Сетка">⊞</button>
+                            <button class="view-btn" data-view="list" onclick="setView('list', this)" title="Список">☰</button>
+                        </div>
+                    </div>
+
+                    <!-- Папки -->
+                    <div class="folders-section" id="foldersSection">
+                        <div class="folders-grid" id="foldersGrid">
+                            {% for f in folders %}
+                                <div class="folder-card"
+                                    data-folder-id="{{ f.id }}"
+                                    data-parent-id="{{ f.parent_id|default:'' }}"
+                                    onclick="openFolder({{ f.id }})">
+                                    <div class="folder-card__icon">📁</div>
+                                    <div class="folder-card__info">
+                                        <div class="folder-card__name">{{ f.name }}</div>
+                                        <div class="folder-card__meta" data-folder-meta="{{ f.id }}"></div>
+                                    </div>
+                                    <button type="button" class="folder-card__delete"
+                                            onclick="event.stopPropagation(); deleteFolder({{ f.id }}, '{{ f.name|escapejs }}')"
+                                            title="Удалить папку">🗑</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="docs-container" id="docsContainer">
+                        {% for doc in documents %}
+                            <div class="doc-card"
+                                data-pet-id="pet-{{ doc.pet_id }}"
+                                data-title="{{ doc.title|default:doc.file.name|lower }}"
+                                data-pet-name="{{ doc.pet.name|lower }}"
+                                data-doc-id="{{ doc.pk }}"
+                                data-doc-url="{{ doc.file.url }}"
+                                data-doc-title-display="{{ doc.title|default:doc.file.name }}"
+                                data-folder-id="{{ doc.folder_id|default:'' }}"
+                                data-is-public="{% if doc.is_public %}1{% else %}0{% endif %}"
+                                oncontextmenu="return showDocContextMenu(event, this);">
+                                <div class="doc-card__preview">
+                                    <div class="doc-card__format-badge">
+                                        <span class="doc-card__format-large">
+                                            {% with ext=doc.file.name|slice:"-3:" %}{{ ext|upper }}{% endwith %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="doc-card__body">
+                                    <h3 class="doc-card__title">{{ doc.title|default:doc.file.name }}</h3>
+                                    <div class="doc-card__pet"><span>{{ doc.pet.name }}</span></div>
+                                    <div class="doc-card__meta">
+                                        <span>{{ doc.date|date:"d.m.Y" }}</span>
+                                        <span>{{ doc.folder.name|default:"Без папки" }}</span>
+                                    </div>
+                                </div>
+                                <div class="doc-card__footer">
+                                    <a href="{{ doc.file.url }}" class="btn btn-secondary" target="_blank">Просмотр</a>
+                                    <a href="{{ doc.file.url }}" class="btn btn-primary" download>Скачать</a>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="docs-empty" style="grid-column:1/-1;">
+                                <div class="empty-icon">📁</div>
+                                <h3 class="empty-title">Документов пока нет</h3>
+                                <p class="empty-text">Нажмите «Загрузить документ», чтобы добавить первый файл</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="docs-empty" id="docsEmpty" style="display: none;">
+                        <div class="empty-icon">📁</div>
+                        <h3 class="empty-title">Ничего не найдено</h3>
+                        <p class="empty-text">Попробуйте изменить параметры поиска или фильтры</p>
+                    </div>
+                </section>
+
+                <!-- ============ НАПОМИНАНИЯ ============ -->
+                <section class="page" id="reminders">
+                    <div class="page-header">
+                        <div>
+                            <h1>Напоминания</h1>
+                            <p class="page-subtitle">Календарь приёмов и важных событий для ваших питомцев</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="openReminderModal()">
+                            <span>➕</span><span>Добавить напоминание</span>
+                        </button>
+                    </div>
+
+                    <div class="reminders-layout">
+                        <div class="calendar-card">
+                            <div class="calendar-header">
+                                <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+                                <h3 class="calendar-title" id="calendarTitle"></h3>
+                                <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+                            </div>
+                            <div class="calendar-weekdays">
+                                <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+                            </div>
+                            <div class="calendar-grid" id="calendarGrid"></div>
+                        </div>
+                        <div class="reminders-list-card">
+                            <div class="reminders-list-header">
+                                <h3 class="reminders-list-title">Предстоящие события</h3>
+                                <div class="reminders-filter">
+                                    <button class="reminder-filter-btn active" data-filter="upcoming" onclick="filterReminders('upcoming', this)">Предстоящие</button>
+                                    <button class="reminder-filter-btn" data-filter="all" onclick="filterReminders('all', this)">Все</button>
+                                </div>
+                            </div>
+                            <div class="reminders-items" id="remindersItems"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ ПАРАМЕТРЫ ============ -->
+                <section class="page" id="settings">
+                    <div class="settings-container">
+                        <div class="settings-block">
+                            <div class="settings-block-header">
+                                <h2 class="settings-block-title">Профиль</h2>
+                                <p class="settings-block-subtitle">Основная информация о вас</p>
+                            </div>
+                            <div class="settings-card">
+                                <div class="profile-avatar-section">
+                                    <div class="profile-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+                                    <div class="profile-avatar-info">
+                                        <h3 class="profile-name">{{ user.get_full_name|default:user.username }}</h3>
+                                        <p class="profile-role">{{ user.get_role_display }}</p>
+                                    </div>
+                                </div>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Имя пользователя</label>
+                                        <input type="text" class="form-input" value="{{ user.username }}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-input" value="{{ user.email }}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Телефон</label>
+                                        <input type="text" class="form-input" value="{{ user.phone|default:'—' }}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Город</label>
+                                        <input type="text" class="form-input" value="{{ user.city|default:'—' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="settings-actions">
+                                    <a href="{% url 'profile' %}" class="btn btn-primary">Перейти в профиль</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-block">
+                            <div class="settings-block-header">
+                                <h2 class="settings-block-title">Подписка</h2>
+                                <p class="settings-block-subtitle">Управление доступом</p>
+                            </div>
+                            <div class="settings-card">
+                                {% if user.has_active_subscription %}
+                                    <p>Статус: <span class="status-active" style="padding:6px 14px;border-radius:999px;">Активна</span></p>
+                                    {% with sub=user.subscriptions.first %}
+                                        {% if sub %}
+                                            <p>Действует до: <strong>{{ sub.end_date }}</strong></p>
+                                            <p>Осталось дней: <strong>{{ sub.days_left }}</strong></p>
+                                        {% endif %}
+                                    {% endwith %}
+                                    <a href="{% url 'subscription' %}" class="btn btn-primary">Продлить подписку</a>
+                                {% else %}
+                                    <p>Статус: <span class="status-inactive" style="padding:6px 14px;border-radius:999px;">Нет активной</span></p>
+                                    <a href="{% url 'subscription' %}" class="btn btn-primary">Оформить за 200 ₽</a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="settings-block">
+                            <div class="settings-block-header">
+                                <h2 class="settings-block-title">Безопасность</h2>
+                                <p class="settings-block-subtitle">Защитите свой аккаунт</p>
+                            </div>
+                            <div class="settings-card">
+                                <div class="password-change-block">
+                                    <div class="password-change-info">
+                                        <div class="password-change-icon">🔐</div>
+                                        <div class="password-change-text">
+                                            <h3 class="password-change-title">Сменить пароль</h3>
+                                            <p class="password-change-desc">Рекомендуем менять пароль каждые 3 месяца</p>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'password_reset' %}" class="btn btn-change-password">
+                                        <span>Сменить пароль</span><span class="btn-arrow">→</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-block">
+                            <div class="settings-block-header">
+                                <h2 class="settings-block-title">Данные</h2>
+                                <p class="settings-block-subtitle">Управление вашими данными</p>
+                            </div>
+                            <div class="settings-card">
+                                <div class="settings-group settings-group--danger">
+                                    <h3 class="settings-group-title settings-group-title--danger">Удаление аккаунта</h3>
+                                    <p class="security-description">Действие необратимо. Все данные будут удалены.</p>
+                                    <button class="btn btn-danger" onclick="stubAction('Удаление аккаунта')">Удалить аккаунт</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
     </div>
-</section>
-{% endblock %}
+
+    <!-- ===== МОДАЛКА: Загрузка документа ===== -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeUploadModal()">×</button>
+            <h3 class="modal-title">Загрузить документ</h3>
+            <form method="post" enctype="multipart/form-data" id="uploadForm" action="">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Питомец *</label>
+                    <select class="form-input" name="pet_id" id="uploadPetSelect" required onchange="updateUploadAction()">
+                        <option value="">— выберите питомца —</option>
+                        {% for p in pets_filter %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Название</label>
+                    <input type="text" class="form-input" name="title" placeholder="Например: Анализ крови">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Файл *</label>
+                    <input type="file" class="form-input" name="file" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Дата документа *</label>
+                    <input type="date" class="form-input" name="date" required value="{% now 'Y-m-d' %}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Папка</label>
+                    <select class="form-input" name="folder">
+                        <option value="">— Без папки —</option>
+                        {% for f in folders %}
+                            <option value="{{ f.id }}">{{ f.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Описание</label>
+                    <textarea class="form-input" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Загрузить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА: Корзина ===== -->
+    <div class="modal-overlay" id="trashModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeTrashModal()">×</button>
+            <h3 class="modal-title">🗑 Корзина</h3>
+            {% if deleted_documents %}
+                {% for doc in deleted_documents %}
+                    <div class="trash-item">
+                        <div class="trash-item__info">
+                            <div class="trash-item__name">{{ doc.title|default:doc.file.name }}</div>
+                            <div class="trash-item__meta">
+                                {{ doc.pet.name }} • удалён {{ doc.deleted_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <form method="post" action="{% url 'document_restore' doc.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary" style="padding:6px 12px;font-size:0.8rem;">Восстановить</button>
+                            </form>
+                            <form method="post" action="{% url 'document_permanent_delete' doc.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem;color:#dc2626;border-color:#dc2626;"
+                                        onclick="return confirm('Удалить навсегда? Файл будет утерян.')">Удалить</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted" style="text-align:center;padding:20px;">Корзина пуста</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ===== JSON-данные ===== -->
+    {{ reminders_json|json_script:"reminders-data" }}
+    {{ folders_json|json_script:"folders-data" }}
+
+    <!-- ===== КОНТЕКСТНОЕ МЕНЮ ===== -->
+    <div class="doc-context-menu" id="docContextMenu">
+        <button type="button" class="doc-context-menu__item" onclick="ctxView()">
+            <span>👁️</span><span>Просмотр</span>
+        </button>
+        <button type="button" class="doc-context-menu__item" onclick="ctxDownload()">
+            <span>⬇️</span><span>Скачать</span>
+        </button>
+        <button type="button" class="doc-context-menu__item" onclick="ctxMove()">
+            <span>📁</span><span>Переместить в папку</span>
+        </button>
+        <button type="button" class="doc-context-menu__item" onclick="ctxShare()">
+            <span>🔗</span><span>Поделиться</span>
+        </button>
+        <button type="button" class="doc-context-menu__item" id="ctxUnshareBtn" onclick="ctxUnshare()" style="display:none;">
+            <span>🚫</span><span>Отозвать ссылку</span>
+        </button>
+        <div class="doc-context-menu__divider"></div>
+        <button type="button" class="doc-context-menu__item doc-context-menu__item--danger" onclick="ctxDelete()">
+            <span>🗑️</span><span>Удалить</span>
+        </button>
+    </div>
+
+    <form id="ctxDeleteForm" method="post" style="display:none;">
+        {% csrf_token %}
+    </form>
+
+    <!-- ===== МОДАЛКА: Создание папки ===== -->
+    <div class="modal-overlay" id="folderModal" onclick="if(event.target===this)closeFolderModal()">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeFolderModal()">×</button>
+            <h3 class="modal-title">📁 Создать папку</h3>
+            <form method="post" action="{% url 'folder_create' %}" id="folderForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Название папки *</label>
+                    <input type="text" class="form-input" name="name" id="folderNameInput" placeholder="Например: Анализы 2026" required>
+                </div>
+                <input type="hidden" name="parent" id="folderParentInput" value="">
+                <p class="form-hint" id="folderParentHint" style="font-size:0.8rem;color:#6b5b8a;"></p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeFolderModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА: Перемещение документа ===== -->
+    <div class="modal-overlay" id="moveModal" onclick="if(event.target===this)closeMoveModal()">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeMoveModal()">×</button>
+            <h3 class="modal-title">📁 Переместить в папку</h3>
+            <div class="form-group" style="margin-bottom:12px;">
+                <input type="text"
+                    class="form-input"
+                    id="moveFolderSearch"
+                    placeholder="🔍 Найти папку по названию..."
+                    oninput="filterMoveFolders()">
+            </div>
+            <div id="moveFolderList" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;">
+                <button type="button"
+                        class="folder-card move-folder-item"
+                        style="cursor:pointer;"
+                        data-folder-name=""
+                        onclick="doMove('')">
+                    <div class="folder-card__icon">📂</div>
+                    <div class="folder-card__info">
+                        <div class="folder-card__name">Без папки</div>
+                        <div class="folder-card__meta">Корень документов</div>
+                    </div>
+                </button>
+                {% for f in folders %}
+                    <button type="button"
+                            class="folder-card move-folder-item"
+                            style="cursor:pointer;"
+                            data-folder-name="{{ f.name|lower|escapejs }}"
+                            onclick="doMove('{{ f.id }}')">
+                        <div class="folder-card__icon">📁</div>
+                        <div class="folder-card__info">
+                            <div class="folder-card__name">{{ f.name }}</div>
+                            <div class="folder-card__meta">Папка</div>
+                        </div>
+                    </button>
+                {% endfor %}
+            </div>
+            <div class="form-actions" style="margin-top:20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeMoveModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА: Напоминание ===== -->
+    <div class="modal-overlay" id="reminderModal" onclick="if(event.target===this)closeReminderModal()">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeReminderModal()">×</button>
+            <h3 class="modal-title" id="reminderModalTitle">Добавить напоминание</h3>
+            <form method="post" id="reminderForm" action="">
+                {% csrf_token %}
+                <input type="hidden" name="reminder_id" id="reminderId" value="">
+
+                <div class="form-group" id="reminderPetGroup">
+                    <label class="form-label">Питомец *</label>
+                    <select class="form-input" name="pet_id" id="reminderPetSelect" required onchange="updateReminderAction()">
+                        <option value="">— выберите питомца —</option>
+                        {% for p in pets_filter %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Заголовок *</label>
+                    <input type="text" class="form-input" name="title" id="reminderTitle" placeholder="Например: Запись к врачу" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Тип</label>
+                    <select class="form-input" name="reminder_type" id="reminderType">
+                        <option value="checkup">Осмотр</option>
+                        <option value="vaccination">Прививка</option>
+                        <option value="injection">Укол</option>
+                        <option value="medication">Приём лекарств</option>
+                        <option value="grooming">Груминг</option>
+                        <option value="surgery">Операция</option>
+                        <option value="other" selected>Другое</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Дата *</label>
+                    <input type="date" class="form-input" name="date" id="reminderDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Время (опционально)</label>
+                    <input type="time" class="form-input" name="time" id="reminderTime">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Статус</label>
+                    <select class="form-input" name="status" id="reminderStatus">
+                        <option value="pending" selected>Ожидает</option>
+                        <option value="completed">Выполнено</option>
+                        <option value="missed">Пропущено</option>
+                        <option value="cancelled">Отменено</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Описание</label>
+                    <textarea class="form-input" name="description" id="reminderDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeReminderModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary" id="reminderSubmitBtn">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== ОДИН БОЛЬШОЙ SCRIPT ===== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ===== ГЛОБАЛЬНОЕ СОСТОЯНИЕ =====
+        let allFolders = [];
+        try {
+            allFolders = JSON.parse(document.getElementById('folders-data').textContent);
+        } catch (e) {
+            console.error('folders-data: parse error', e);
+        }
+        let currentFolderId = null;
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let currentView = 'grid';
+
+        const remindersData = JSON.parse(document.getElementById('reminders-data').textContent);
+
+        // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК =====
+        window.switchPage = function(pageId) {
+            document.querySelectorAll('.menu-item').forEach(mi => {
+                mi.classList.remove('active');
+                if (mi.getAttribute('data-page') === pageId) mi.classList.add('active');
+            });
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const page = document.getElementById(pageId);
+            if (page) page.classList.add('active');
+
+            if (pageId === 'reminders') {
+                renderCalendar();
+                renderReminders();
+            }
+            document.getElementById('userPanel').classList.remove('active');
+            document.getElementById('notificationsPanel').classList.remove('active');
+        };
+
+        // ===== ПАНЕЛИ ПОЛЬЗОВАТЕЛЯ / УВЕДОМЛЕНИЙ =====
+        window.toggleUserPanel = function() {
+            document.getElementById('userPanel').classList.toggle('active');
+            document.getElementById('notificationsPanel').classList.remove('active');
+        };
+        window.toggleNotifications = function() {
+            document.getElementById('notificationsPanel').classList.toggle('active');
+            document.getElementById('userPanel').classList.remove('active');
+        };
+        document.addEventListener('click', (e) => {
+            const userPanel = document.getElementById('userPanel');
+            const avatarWrapper = document.querySelector('.user-avatar-wrapper');
+            const notif = document.getElementById('notificationsPanel');
+            const notifWrapper = document.querySelector('.notifications-wrapper');
+            if (userPanel && userPanel.classList.contains('active') && !avatarWrapper.contains(e.target)) {
+                userPanel.classList.remove('active');
+            }
+            if (notif && notif.classList.contains('active') && !notifWrapper.contains(e.target)) {
+                notif.classList.remove('active');
+            }
+        });
+
+        window.stubAction = function(name) { alert(`⚠️ Функция "${name}" находится в разработке.`); };
+
+        // ===== МОДАЛКА ЗАГРУЗКИ =====
+        window.openUploadModal = function() {
+            if (!document.querySelector('#uploadPetSelect option[value]:not([value=""])')) {
+                alert('Сначала добавьте хотя бы одного питомца.');
+                return;
+            }
+            document.getElementById('uploadModal').classList.add('active');
+        };
+        window.closeUploadModal = function() {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.getElementById('uploadForm').reset();
+        };
+        window.updateUploadAction = function() {
+            const petId = document.getElementById('uploadPetSelect').value;
+            const form = document.getElementById('uploadForm');
+            form.action = petId ? `/pets/${petId}/document/add/` : '';
+        };
+
+        // ===== МОДАЛКА КОРЗИНЫ =====
+        window.openTrashModal = function() {
+            document.getElementById('trashModal').classList.add('active');
+        };
+        window.closeTrashModal = function() {
+            document.getElementById('trashModal').classList.remove('active');
+        };
+
+        // ===== ДОКУМЕНТЫ: ФИЛЬТР / ПОИСК / ВИД =====
+        function applyDocFilter() {
+            const cards = document.querySelectorAll('#docsContainer .doc-card');
+            const empty = document.getElementById('docsEmpty');
+            const container = document.getElementById('docsContainer');
+            const target = currentFolderId ? String(currentFolderId) : '';
+            const isSearching = searchQuery.length > 0;
+            let visible = 0;
+
+            cards.forEach(card => {
+                const cardFolder = card.dataset.folderId || '';
+                // Если идёт поиск — игнорируем папку, ищем везде
+                const matchFolder = isSearching ? true : (cardFolder === target);
+                const matchFilter = currentFilter === 'all' || card.dataset.petId === currentFilter;
+                const matchSearch = !isSearching
+                    || card.dataset.title.includes(searchQuery)
+                    || card.dataset.petName.includes(searchQuery);
+
+                if (matchFolder && matchFilter && matchSearch) {
+                    card.style.display = '';
+                    visible++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visible === 0 && cards.length > 0) {
+                container.style.display = 'none';
+                empty.style.display = 'block';
+                empty.querySelector('.empty-title').textContent =
+                    isSearching ? 'Ничего не найдено' : 'В этой папке пока нет документов';
+                empty.querySelector('.empty-text').textContent =
+                    isSearching ? 'Попробуйте изменить поисковый запрос' : 'Загрузите документ или переместите сюда';
+            } else {
+                container.style.display = '';
+                empty.style.display = 'none';
+            }
+        }
+        // Обновление состояния фильтра + перерисовка
+        window.setFilterValue = function(filter) {
+            currentFilter = filter;
+            applyDocFilter();
+        };
+
+        // Совместимость со старым API (если где-то осталось на кнопках)
+        window.setFilter = function(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            const select = document.getElementById('petFilterSelect');
+            if (select) select.value = filter;
+            applyDocFilter();
+        };
+        window.filterDocuments = function() {
+            searchQuery = document.getElementById('docsSearchInput').value.trim().toLowerCase();
+            renderBreadcrumbs();
+            applyDocFilter();
+        };
+        window.setView = function(view, btn) {
+            const container = document.getElementById('docsContainer');
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (view === 'list') container.classList.add('view-list');
+            else container.classList.remove('view-list');
+        };
+
+        // ===== ПАПКИ =====
+        function renderBreadcrumbs() {
+            const container = document.getElementById('breadcrumbs');
+            if (!container) return;
+            const chain = [];
+            let id = currentFolderId;
+            while (id) {
+                const f = allFolders.find(x => x.id === id);
+                if (!f) break;
+                chain.unshift(f);
+                id = f.parent_id;
+            }
+
+            let html = `<a class="breadcrumbs__item ${chain.length === 0 && !searchQuery ? 'breadcrumbs__item--current' : ''}" onclick="goToRoot()">📂 Все документы</a>`;
+            chain.forEach((f, idx) => {
+                const isLast = idx === chain.length - 1;
+                html += ` <span class="breadcrumbs__separator">/</span> `;
+                if (isLast && !searchQuery) {
+                    html += `<span class="breadcrumbs__item breadcrumbs__item--current">📁 ${f.name}</span>`;
+                } else {
+                    html += `<a class="breadcrumbs__item" onclick="openFolder(${f.id})">📁 ${f.name}</a>`;
+                }
+            });
+
+            if (searchQuery) {
+                html += ` <span class="breadcrumbs__separator">·</span> `;
+                html += `<span class="breadcrumbs__item breadcrumbs__item--current">🔍 Поиск по всем папкам</span>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ===== СКЛОНЕНИЕ «ФАЙЛ» =====
+        function formatFilesCount(n) {
+            if (n === 0) return 'Нет файлов';
+            const mod10 = n % 10;
+            const mod100 = n % 100;
+            let word = 'файлов';
+            if (mod10 === 1 && mod100 !== 11) word = 'файл';
+            else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) word = 'файла';
+            return `${n} ${word}`;
+        }
+
+        function renderFolders() {
+            const cards = document.querySelectorAll('#foldersGrid .folder-card');
+            cards.forEach(card => {
+                const parentId = card.dataset.parentId || '';
+                const target = currentFolderId ? String(currentFolderId) : '';
+                card.style.display = (parentId === target) ? '' : 'none';
+
+                // Обновляем количество файлов с правильным склонением
+                const folderId = parseInt(card.dataset.folderId, 10);
+                const folder = allFolders.find(f => f.id === folderId);
+                const metaEl = card.querySelector('.folder-card__meta');
+                if (metaEl && folder) {
+                    metaEl.textContent = formatFilesCount(folder.documents_count || 0);
+                }
+            });
+        }
+
+        window.openFolder = function(folderId) {
+            currentFolderId = folderId;
+            searchQuery = '';
+            const searchInput = document.getElementById('docsSearchInput');
+            if (searchInput) searchInput.value = '';
+            applyDocFilter();
+            renderBreadcrumbs();
+            renderFolders();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.goToRoot = function() {
+            currentFolderId = null;
+            searchQuery = '';
+            const searchInput = document.getElementById('docsSearchInput');
+            if (searchInput) searchInput.value = '';
+            applyDocFilter();
+            renderBreadcrumbs();
+            renderFolders();
+        };
+
+        window.openFolderModal = function() {
+            document.getElementById('folderModal').classList.add('active');
+            const parentInput = document.getElementById('folderParentInput');
+            const hint = document.getElementById('folderParentHint');
+            if (currentFolderId) {
+                const parent = allFolders.find(f => f.id === currentFolderId);
+                parentInput.value = currentFolderId;
+                hint.textContent = `Папка будет создана внутри «${parent ? parent.name : ''}»`;
+            } else {
+                parentInput.value = '';
+                hint.textContent = 'Папка будет создана в корне';
+            }
+            setTimeout(() => document.getElementById('folderNameInput').focus(), 100);
+        };
+        window.closeFolderModal = function() {
+            document.getElementById('folderModal').classList.remove('active');
+            document.getElementById('folderForm').reset();
+        };
+        window.deleteFolder = function(id, name) {
+            if (!confirm(`Удалить папку «${name}»? Документы останутся, но потеряют привязку.`)) return;
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = `/cabinet/folder/${id}/delete/`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = document.querySelector('#ctxDeleteForm [name=csrfmiddlewaretoken]').value;
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        // ===== ПЕРЕМЕЩЕНИЕ =====
+        window.ctxMove = function() {
+            if (!ctxCurrentCard) return;
+            pendingMoveDocId = ctxCurrentCard.dataset.docId;
+
+            // Сброс поиска в модалке
+            const input = document.getElementById('moveFolderSearch');
+            if (input) input.value = '';
+            filterMoveFolders();
+
+            document.getElementById('moveModal').classList.add('active');
+            hideDocContextMenu();
+        };
+        window.closeMoveModal = function() {
+            document.getElementById('moveModal').classList.remove('active');
+            pendingMoveDocId = null;
+        };
+        window.filterMoveFolders = function() {
+            const input = document.getElementById('moveFolderSearch');
+            const q = (input?.value || '').trim().toLowerCase();
+            const items = document.querySelectorAll('#moveFolderList .move-folder-item');
+            items.forEach(item => {
+                const name = item.dataset.folderName || '';
+                // «Без папки» показываем всегда (если нет поиска или пустой запрос)
+                const isRoot = name === '';
+                if (isRoot) {
+                    item.style.display = q ? 'none' : '';
+                } else {
+                    item.style.display = (!q || name.includes(q)) ? '' : 'none';
+                }
+            });
+        };
+        window.doMove = async function(folderId) {
+            if (!pendingMoveDocId) { closeMoveModal(); return; }
+            const csrfToken = document.querySelector('#ctxDeleteForm [name=csrfmiddlewaretoken]').value;
+            const fd = new FormData();
+            fd.append('folder_id', folderId || '');
+            try {
+                const resp = await fetch(`/document/${pendingMoveDocId}/move/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: fd,
+                });
+                if (resp.ok) location.reload();
+                else alert('Не удалось переместить документ');
+            } catch (e) {
+                alert('Ошибка сети: ' + e);
+            }
+            closeMoveModal();
+        };
+
+        // ===== КОНТЕКСТНОЕ МЕНЮ ДОКУМЕНТА =====
+        let ctxCurrentCard = null;
+        let pendingMoveDocId = null;
+        window.hideDocContextMenu = function() {
+            document.getElementById('docContextMenu').classList.remove('active');
+            ctxCurrentCard = null;
+        };
+        window.showDocContextMenu = function(event, cardEl) {
+            event.preventDefault();
+            ctxCurrentCard = cardEl;
+            const menu = document.getElementById('docContextMenu');
+            const unshareBtn = document.getElementById('ctxUnshareBtn');
+            unshareBtn.style.display = cardEl.dataset.isPublic === '1' ? 'flex' : 'none';
+            menu.classList.add('active');
+            const menuWidth = 220;
+            const menuHeight = cardEl.dataset.isPublic === '1' ? 260 : 220;
+            let x = event.clientX;
+            let y = event.clientY;
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            return false;
+        };
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('docContextMenu');
+            if (menu && !menu.contains(e.target)) hideDocContextMenu();
+        });
+        document.addEventListener('scroll', hideDocContextMenu, true);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideDocContextMenu();
+        });
+
+        window.ctxView = function() {
+            if (!ctxCurrentCard) return;
+            window.open(ctxCurrentCard.dataset.docUrl, '_blank');
+            hideDocContextMenu();
+        };
+        window.ctxDownload = function() {
+            if (!ctxCurrentCard) return;
+            const a = document.createElement('a');
+            a.href = ctxCurrentCard.dataset.docUrl;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            hideDocContextMenu();
+        };
+        window.ctxShare = async function() {
+            if (!ctxCurrentCard) return;
+            const docId = ctxCurrentCard.dataset.docId;
+            const csrfToken = document.querySelector('#ctxDeleteForm [name=csrfmiddlewaretoken]').value;
+            try {
+                const resp = await fetch(`/document/${docId}/share/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await resp.json();
+                if (!resp.ok || data.error) {
+                    alert('Не удалось создать ссылку: ' + (data.error || resp.status));
+                    hideDocContextMenu();
+                    return;
+                }
+                ctxCurrentCard.dataset.isPublic = '1';
+                try {
+                    await navigator.clipboard.writeText(data.url);
+                    alert('🔗 Ссылка скопирована в буфер обмена:\n\n' + data.url);
+                } catch (err) {
+                    prompt('Скопируйте ссылку вручную:', data.url);
+                }
+            } catch (e) {
+                alert('Ошибка сети: ' + e);
+            }
+            hideDocContextMenu();
+        };
+        window.ctxUnshare = async function() {
+            if (!ctxCurrentCard) return;
+            const docId = ctxCurrentCard.dataset.docId;
+            const csrfToken = document.querySelector('#ctxDeleteForm [name=csrfmiddlewaretoken]').value;
+            if (!confirm('Отозвать публичную ссылку? Все, у кого она есть, потеряют доступ.')) {
+                hideDocContextMenu();
+                return;
+            }
+            try {
+                const resp = await fetch(`/document/${docId}/unshare/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await resp.json();
+                if (!resp.ok || data.error) {
+                    alert('Не удалось отозвать ссылку: ' + (data.error || resp.status));
+                    hideDocContextMenu();
+                    return;
+                }
+                ctxCurrentCard.dataset.isPublic = '0';
+                alert('🚫 Публичная ссылка отозвана.');
+            } catch (e) {
+                alert('Ошибка сети: ' + e);
+            }
+            hideDocContextMenu();
+        };
+        window.ctxDelete = function() {
+            if (!ctxCurrentCard) return;
+            const docTitle = ctxCurrentCard.dataset.docTitleDisplay || 'этот документ';
+            if (!confirm(`Переместить "${docTitle}" в корзину?`)) {
+                hideDocContextMenu();
+                return;
+            }
+            const form = document.getElementById('ctxDeleteForm');
+            form.action = `/document/${ctxCurrentCard.dataset.docId}/delete/`;
+            form.submit();
+            hideDocContextMenu();
+        };
+
+        // ===== НАПОМИНАНИЯ / КАЛЕНДАРЬ =====
+        let currentDate = new Date();
+        let currentReminderFilter = 'upcoming';
+        const monthNamesFull = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        const monthNamesShort = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
+        function createDayElement(day, isOther, isToday, hasReminder) {
+            const el = document.createElement('div');
+            el.className = 'calendar-day';
+            el.textContent = day;
+            if (isOther) el.classList.add('other-month');
+            if (isToday) el.classList.add('today');
+            if (hasReminder) el.classList.add('has-reminder');
+            return el;
+        }
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('calendarTitle').textContent = `${monthNamesFull[month]} ${year}`;
+            const firstDay = new Date(year, month, 1);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let startDay = firstDay.getDay() - 1;
+            if (startDay < 0) startDay = 6;
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const today = new Date();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            for (let i = startDay - 1; i >= 0; i--) {
+                grid.appendChild(createDayElement(prevMonthDays - i, true, false, false));
+            }
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+                const hasReminder = remindersData.some(r => {
+                    const rD = new Date(r.date);
+                    return rD.getDate() === day && rD.getMonth() === month && rD.getFullYear() === year;
+                });
+                grid.appendChild(createDayElement(day, false, isToday, hasReminder));
+            }
+            const totalCells = startDay + daysInMonth;
+            for (let day = 1; day <= 42 - totalCells; day++) {
+                grid.appendChild(createDayElement(day, true, false, false));
+            }
+        }
+        window.changeMonth = function(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        };
+        function renderReminders() {
+            const container = document.getElementById('remindersItems');
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            let filtered = remindersData.filter(r => {
+                const rD = new Date(r.date); rD.setHours(0, 0, 0, 0);
+                return currentReminderFilter === 'upcoming' ? rD >= today : true;
+            });
+            filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="reminders-empty"><p>Нет напоминаний</p></div>`;
+                return;
+            }
+                container.innerHTML = filtered.map(r => {
+                    const rD = new Date(r.date);
+                    const isToday = rD.getTime() === today.getTime();
+                    const isPast = rD < today;
+                    let statusClass = 'reminder-status--upcoming';
+                    let statusText = 'Предстоит';
+                    if (isToday) { statusClass = 'reminder-status--today'; statusText = 'Сегодня'; }
+                    else if (isPast) { statusClass = 'reminder-status--past'; statusText = 'Прошло'; }
+
+                    return `
+                        <div class="reminder-card">
+                            <div class="reminder-date-box">
+                                <div class="reminder-date-day">${rD.getDate()}</div>
+                                <div class="reminder-date-month">${monthNamesShort[rD.getMonth()]}</div>
+                            </div>
+                            <div class="reminder-info">
+                                <h4 class="reminder-title">${r.title}</h4>
+                                <p class="reminder-meta">${r.time ? r.time + ' • ' : ''}${r.pet_name} • ${r.type_display}</p>
+                            </div>
+                            <span class="reminder-status ${statusClass}">${statusText}</span>
+                            <div style="display:flex;gap:4px;margin-left:8px;">
+                                <button type="button" class="reminder-action-btn" title="Редактировать"
+                                        onclick="openReminderModal(${r.id})">✏️</button>
+                                <button type="button" class="reminder-action-btn reminder-action-btn--danger" title="Удалить"
+                                        onclick="deleteReminder(${r.id})">🗑</button>
+                            </div>
+                        </div>`;
+                }).join('');
+        }
+        window.filterReminders = function(filter, btn) {
+            currentReminderFilter = filter;
+            document.querySelectorAll('.reminder-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderReminders();
+        };
+
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        renderFolders();
+        renderBreadcrumbs();
+        applyDocFilter();
+        renderCalendar();
+        renderReminders();
+
+        if (window.location.hash === '#documents') {
+            switchPage('documents');
+        }
+        // ===== НАПОМИНАНИЯ: МОДАЛКА =====
+        window.openReminderModal = function(reminderId) {
+            const modal = document.getElementById('reminderModal');
+            const form = document.getElementById('reminderForm');
+            const title = document.getElementById('reminderModalTitle');
+            const petGroup = document.getElementById('reminderPetGroup');
+            const petSelect = document.getElementById('reminderPetSelect');
+            form.reset();
+            document.getElementById('reminderId').value = '';
+
+            if (reminderId) {
+                // Режим редактирования
+                const r = remindersData.find(x => x.id === reminderId);
+                if (!r) return;
+                title.textContent = 'Редактировать напоминание';
+
+                // Скрываем и отключаем поле питомца
+                petGroup.style.display = 'none';
+                petSelect.removeAttribute('required');
+                petSelect.disabled = true;
+
+                document.getElementById('reminderTitle').value = r.title;
+                document.getElementById('reminderType').value = r.type;
+                document.getElementById('reminderDate').value = r.date;
+                document.getElementById('reminderTime').value = r.time || '';
+                document.getElementById('reminderStatus').value = r.status;
+                document.getElementById('reminderDescription').value = r.description || '';
+                form.action = `/reminder/${reminderId}/edit/`;
+            } else {
+                // Режим создания
+                title.textContent = 'Добавить напоминание';
+
+                petGroup.style.display = '';
+                petSelect.setAttribute('required', 'required');
+                petSelect.disabled = false;
+
+                document.getElementById('reminderDate').value = new Date().toISOString().split('T')[0];
+                form.action = '';
+            }
+
+            modal.classList.add('active');
+};
+        window.closeReminderModal = function() {
+            document.getElementById('reminderModal').classList.remove('active');
+            document.getElementById('reminderForm').reset();
+            document.getElementById('reminderId').value = '';
+        };
+
+        window.updateReminderAction = function() {
+            const id = document.getElementById('reminderId').value;
+            if (id) return; // в режиме редактирования action уже установлен
+            const petId = document.getElementById('reminderPetSelect').value;
+            document.getElementById('reminderForm').action = petId ? `/pets/${petId}/reminder/add/` : '';
+        };
+
+        window.deleteReminder = function(reminderId) {
+            if (!confirm('Удалить напоминание?')) return;
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = `/reminder/${reminderId}/delete/`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = document.querySelector('#ctxDeleteForm [name=csrfmiddlewaretoken]').value;
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        };
+    });
+    </script>
+</body>
+</html>

@@ -69,50 +69,52 @@ class Pet(models.Model):
         ('F', 'Женский'),
     )
 
+    class HealthStatus(models.TextChoices):
+        HEALTHY = 'healthy', 'Здоров'
+        OBSERVATION = 'observation', 'Под наблюдением'
+        TREATMENT = 'treatment', 'На лечении'
+        RECOVERY = 'recovery', 'Восстановление'
+        CHRONIC = 'chronic', 'Хроническое заболевание'
+        CRITICAL = 'critical', 'Критическое состояние'
+        QUARANTINE = 'quarantine', 'Карантин'
+
     owner = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='pets',
-        verbose_name='Владелец'
+        User, on_delete=models.CASCADE,
+        related_name='pets', verbose_name='Владелец'
     )
     co_owners = models.ManyToManyField(
-        User,
-        related_name='co_owned_pets',
-        blank=True,
-        verbose_name='Совладельцы'
+        User, related_name='co_owned_pets',
+        blank=True, verbose_name='Совладельцы'
     )
-    name = models.CharField(
-        max_length=100,
-        verbose_name='Кличка'
+    name = models.CharField(max_length=100, verbose_name='Кличка')
+    animal_type = models.CharField(max_length=50, verbose_name='Вид животного')
+
+    # --- НОВОЕ ---
+    breed = models.CharField(
+        max_length=100, blank=True,
+        verbose_name='Порода'
     )
-    animal_type = models.CharField(
-        max_length=50,
-        verbose_name='Вид животного'
+    photo = models.ImageField(
+        upload_to='pets/%Y/%m/%d/',
+        blank=True, null=True,
+        verbose_name='Фото'
     )
-    gender = models.CharField(
-        max_length=1,
-        choices=GENDER_CHOICES,
-        verbose_name='Пол'
+    health_status = models.CharField(
+        max_length=20,
+        choices=HealthStatus.choices,
+        default=HealthStatus.HEALTHY,
+        verbose_name='Состояние здоровья'
     )
-    birth_date = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Дата рождения'
-    )
+
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name='Пол')
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     weight = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
+        max_digits=5, decimal_places=2,
         validators=[MinValueValidator(0)],
         verbose_name='Вес (кг)'
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Дата обновления'
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
 
     class Meta:
         verbose_name = 'Питомец'
@@ -136,6 +138,19 @@ class Pet(models.Model):
     def current_diagnosis(self):
         last = self.diagnoses.order_by('-date').first()
         return last.diagnosis_text if last else None
+
+    # --- НОВОЕ: css-класс для бейджа состояния ---
+    @property
+    def health_status_class(self):
+        return {
+            'healthy': 'status-active',
+            'observation': 'status-warning',
+            'treatment': 'status-treatment',
+            'recovery': 'status-recovery',
+            'chronic': 'status-chronic',
+            'critical': 'status-critical',
+            'quarantine': 'status-inactive',
+        }.get(self.health_status, 'status-active')
 
 
 class Diagnosis(models.Model):
@@ -264,6 +279,12 @@ class Document(models.Model):
 
     is_deleted = models.BooleanField(default=False, verbose_name='Удалён', db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата удаления')
+    
+    share_token = models.UUIDField(
+        null=True, blank=True, unique=True, db_index=True,
+        verbose_name='Токен публичной ссылки'
+    )
+    is_public = models.BooleanField(default=False, verbose_name='Публичный доступ')
 
     class Meta:
         verbose_name = 'Документ'
@@ -350,6 +371,11 @@ class Reminder(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name='Дата обновления'
+    )
+    notified_at = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='Когда отправлено уведомление',
+        db_index=True
     )
 
     class Meta:

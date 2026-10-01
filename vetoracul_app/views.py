@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from datetime import timedelta
 
 from django.views.generic import TemplateView, View, CreateView, FormView, ListView, UpdateView, DeleteView, DetailView
@@ -8,13 +11,69 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.db.models import Q
 
 from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm
 
+from datetime import timedelta
+
+
+def _send_pending_reminder_notifications(user=None):
+    """
+    Отправляет email-уведомления о напоминаниях, которые наступают завтра.
+    Работает для одного пользователя (если user передан) или для всех.
+    Повторно не отправляет — использует поле notified_at.
+    """
+    tomorrow = timezone.now().date() + timedelta(days=1)
+
+    qs = Reminder.objects.filter(
+        status=Reminder.Status.PENDING,
+        date=tomorrow,
+        notified_at__isnull=True,
+    ).select_related('pet', 'pet__owner')
+
+    if user is not None:
+        qs = qs.filter(pet__owner=user)
+
+    sent = 0
+    for r in qs:
+        owner = r.pet.owner
+        recipients = []
+        if owner.email:
+            recipients.append(owner.email)
+
+        # Совладельцы тоже получают уведомление
+        for co in r.pet.co_owners.all():
+            if co.email:
+                recipients.append(co.email)
+
+        if not recipients:
+            continue
+
+        time_str = f' в {r.time.strftime("%H:%M")}' if r.time else ''
+        subject = f'Напоминание: {r.title} — завтра'
+        message = (
+            f'Здравствуйте!\n\n'
+            f'Напоминаем, что завтра, {r.date.strftime("%d.%m.%Y")}{time_str}, '
+            f'у питомца {r.pet.name} запланировано:\n\n'
+            f'• {r.title}\n'
+            f'  Тип: {r.get_reminder_type_display()}\n'
+            + (f'  Описание: {r.description}\n' if r.description else '') +
+            f'\nНе забудьте!\n\n— ВетОракул'
+        )
+
+        try:
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipients)
+            r.notified_at = timezone.now()
+            r.save(update_fields=['notified_at'])
+            sent += 1
+        except Exception as e:
+            logger.error('Не удалось отправить уведомление #%s: %s', r.pk, e)
+
+    return sent
 
 
 class SubscriptionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -123,8 +182,14 @@ class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
     template_name = 'auth/password_reset.html'
     email_template_name = 'auth/password_reset_email.html'
-    subject_template_name = 'registration/password_reset_subject.txt'
+    subject_template_name = 'auth/password_reset_subject.txt'
     success_url = reverse_lazy('password_reset_done')
+    
+    def form_valid(self, form):
+        logger.warning('>>> Начинаю отправку письма для %s', form.cleaned_data['email'])
+        response = super().form_valid(form)
+        logger.warning('>>> Письмо успешно отправлено')
+        return response
 
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
@@ -207,7 +272,7 @@ class FolderCreateView(LoginRequiredMixin, CreateView):
     model = Folder
     form_class = FolderForm
     template_name = 'cabinet/folder_form.html'
-    success_url = reverse_lazy('folder_list')
+    success_url = reverse_lazy('home')   # ← было folder_list
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -216,6 +281,13 @@ class FolderCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
+        # parent берём из POST (скрытое поле модалки)
+        parent_id = self.request.POST.get('parent', '').strip()
+        if parent_id:
+            try:
+                form.instance.parent = Folder.objects.get(pk=parent_id, owner=self.request.user)
+            except Folder.DoesNotExist:
+                pass
         messages.success(self.request, 'Папка создана.')
         return super().form_valid(form)
 
@@ -238,7 +310,6 @@ class FolderUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 class FolderDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Folder
     template_name = 'cabinet/folder_confirm_delete.html'
-    success_url = reverse_lazy('folder_list')
 
     def test_func(self):
         return self.get_object().owner == self.request.user
@@ -246,6 +317,9 @@ class FolderDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Папка удалена.')
         return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('home') + '#documents'
 
 
 class FolderDetailView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -327,13 +401,12 @@ class TrashListView(LoginRequiredMixin, ListView):
 class DocumentRestoreView(LoginRequiredMixin, View):
     def post(self, request, pk):
         doc = get_object_or_404(Document, pk=pk)
-        # Проверка доступа
         if not (doc.pet.owner == request.user or request.user in doc.pet.co_owners.all()):
             messages.error(request, 'Нет доступа.')
-            return redirect('trash')
+            return redirect('home')
         doc.restore()
         messages.success(request, 'Документ восстановлен.')
-        return redirect('trash')
+        return redirect('home')
 
 
 class DocumentPermanentDeleteView(LoginRequiredMixin, View):
@@ -341,13 +414,12 @@ class DocumentPermanentDeleteView(LoginRequiredMixin, View):
         doc = get_object_or_404(Document, pk=pk)
         if not (doc.pet.owner == request.user or request.user in doc.pet.co_owners.all()):
             messages.error(request, 'Нет доступа.')
-            return redirect('trash')
-        # Удаляем файл с диска
+            return redirect('home')
         doc.file.delete(save=False)
         doc.delete()
-        messages.success(request, 'Документ удалён безвозвратно.')
-        return redirect('trash')
-
+        messages.success(self.request, 'Документ удалён безвозвратно.')
+        return redirect('home')
+    
 
 class DocumentSoftDeleteView(LoginRequiredMixin, View):
     """Обычное удаление — отправка в корзину."""
@@ -355,11 +427,10 @@ class DocumentSoftDeleteView(LoginRequiredMixin, View):
         doc = get_object_or_404(Document, pk=pk)
         if not (doc.pet.owner == request.user or request.user in doc.pet.co_owners.all()):
             messages.error(request, 'Нет доступа.')
-            return redirect('folder_list')
+            return redirect('home')
         doc.soft_delete()
         messages.success(request, 'Документ перемещён в корзину.')
-        return redirect('folder_list')
-
+        return redirect('home')
 
 class PetListView(LoginRequiredMixin, ListView):
     """Список питомцев пользователя (свои + где он совладелец)."""
@@ -585,14 +656,14 @@ class DocumentCreateView(PetAccessMixin, CreateView):
         messages.success(self.request, 'Документ загружен.')
         return super().form_valid(form)
 
-    def get_success_url(self):
-        return reverse_lazy('pet_detail', kwargs={'pk': self.pet.pk})
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['pet'] = self.pet
         ctx['title'] = 'Загрузить документ'
         return ctx
+    
+    def get_success_url(self):
+        return reverse_lazy('home') + '#documents'
 
 
 class DocumentUpdateView(LoginRequiredMixin, UpdateView):
@@ -641,7 +712,7 @@ class ReminderCreateView(PetAccessMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('pet_detail', kwargs={'pk': self.pet.pk})
+        return reverse('home') + '#reminders'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -668,7 +739,7 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('pet_detail', kwargs={'pk': self.object.pet.pk})
+        return reverse('home') + '#reminders'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -692,11 +763,11 @@ class ReminderDeleteView(LoginRequiredMixin, DeleteView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['object_type'] = 'напоминание'
-        ctx['cancel_url'] = reverse_lazy('pet_detail', kwargs={'pk': self.object.pet.pk})
+        ctx['cancel_url'] = reverse('home') + '#reminders'
         return ctx
 
     def get_success_url(self):
-        return reverse_lazy('pet_detail', kwargs={'pk': self.object.pet.pk})
+        return reverse('home') + '#reminders'
 
     def form_valid(self, form):
         messages.success(self.request, 'Напоминание удалено.')
@@ -719,28 +790,100 @@ class VetDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ).select_related('pet', 'pet__owner')
         return ctx
     
-class HomeView(LoginRequiredMixin, TemplateView):
-    template_name = 'home.html'
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role == 'vet':
-            return redirect('vet_dashboard')
-        return super().dispatch(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        user = self.request.user
-        pets = (user.pets.all() | user.co_owned_pets.all()).distinct()
-        ctx['pets'] = pets
-        ctx['stats'] = {
-            'pets': pets.count(),
-            'documents': Document.objects.filter(pet__in=pets, is_deleted=False).count(),
-            'reminders': Reminder.objects.filter(pet__in=pets, status='pending').count(),
+@login_required
+def home_view(request):
+    """Главная страница пользователя. Ветеринар редиректится в свой кабинет."""
+    if request.user.role == 'vet':
+        return redirect('vet_dashboard')
+
+    user = request.user
+    pets = (user.pets.all() | user.co_owned_pets.all()).distinct().order_by('name')
+
+    documents = Document.objects.filter(pet__in=pets, is_deleted=False).order_by('-date')
+    deleted_documents = Document.objects.filter(pet__in=pets, is_deleted=True).order_by('-deleted_at')
+    reminders = Reminder.objects.filter(pet__in=pets).order_by('date', 'time')
+    folders = Folder.objects.filter(owner=user).order_by('name')
+
+    stats = {
+        'pets': pets.count(),
+        'documents': documents.count(),
+        'reminders': reminders.filter(status=Reminder.Status.PENDING).count(),
+    }
+
+    upcoming_reminders = reminders.filter(
+        status=Reminder.Status.PENDING,
+        date__gte=timezone.now().date()
+    )[:5]
+
+    pets_filter = [{'id': p.id, 'name': p.name} for p in pets]
+
+    # Для удобства JS: список папок и parent_id
+    folders_json = [
+        {
+            'id': f.id,
+            'name': f.name,
+            'parent_id': f.parent_id,
+            'documents_count': f.documents.filter(is_deleted=False).count(),
         }
-        ctx['upcoming_reminders'] = Reminder.objects.filter(
-            pet__in=pets, status='pending', date__gte=timezone.now().date()
-        ).order_by('date')[:5]
-        return ctx
+        for f in folders
+    ]
+
+    reminders_json = [
+        {
+            'id': r.id,
+            'title': r.title,
+            'date': r.date.isoformat(),
+            'time': r.time.strftime('%H:%M') if r.time else '',
+            'pet_name': r.pet.name,
+            'type': r.reminder_type,
+            'type_display': r.get_reminder_type_display(),
+            'status': r.status,
+            'status_display': r.get_status_display(),
+            'description': r.description or '',
+        }
+        for r in reminders
+    ]
+
+    context = {
+        'pets': pets,
+        'documents': documents,
+        'deleted_documents': deleted_documents,
+        'reminders': reminders,
+        'upcoming_reminders': upcoming_reminders,
+        'stats': stats,
+        'pets_filter': pets_filter,
+        'folders': folders,
+        'folders_json': folders_json,
+        'reminders_json': reminders_json,
+    }
+    return render(request, 'home.html', context)
+
+
+@login_required
+def document_move(request, pk):
+    """POST — перемещает документ в папку (или из папки)."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Только POST'}, status=405)
+
+    doc = get_object_or_404(Document, pk=pk)
+    user = request.user
+
+    if not (doc.pet.owner == user or user in doc.pet.co_owners.all()):
+        return JsonResponse({'error': 'Нет доступа'}, status=403)
+
+    folder_id = request.POST.get('folder_id', '').strip()
+    if folder_id:
+        folder = get_object_or_404(Folder, pk=folder_id, owner=user)
+        doc.folder = folder
+    else:
+        doc.folder = None
+    doc.save(update_fields=['folder'])
+    return JsonResponse({'ok': True})
 
     
 class VetRegisterView(CreateView):
@@ -810,3 +953,72 @@ class VetMedicalRecordCreateView(LoginRequiredMixin, UserPassesTestMixin, Create
         ctx = super().get_context_data(**kwargs)
         ctx['pet'] = self.pet
         return ctx
+    
+import uuid
+from django.http import JsonResponse, FileResponse, Http404
+
+
+@login_required
+def document_share(request, pk):
+    """POST — генерирует (или возвращает) публичную ссылку на документ."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Только POST'}, status=405)
+
+    doc = get_object_or_404(Document, pk=pk)
+    user = request.user
+
+    # Проверка доступа
+    if not (
+        doc.pet.owner == user
+        or user in doc.pet.co_owners.all()
+        or user.role == 'vet'
+    ):
+        return JsonResponse({'error': 'Нет доступа'}, status=403)
+
+    if doc.is_deleted:
+        return JsonResponse({'error': 'Документ в корзине'}, status=400)
+
+    if not doc.share_token or not doc.is_public:
+        doc.share_token = uuid.uuid4()
+        doc.is_public = True
+        doc.save(update_fields=['share_token', 'is_public'])
+
+    url = request.build_absolute_uri(
+        reverse('document_public', kwargs={'token': str(doc.share_token)})
+    )
+    return JsonResponse({'url': url, 'token': str(doc.share_token)})
+
+
+def document_public(request, token):
+    """Публичный доступ к файлу документа по токену."""
+    try:
+        doc = Document.objects.get(share_token=token, is_public=True)
+    except Document.DoesNotExist:
+        raise Http404('Документ не найден или ссылка отозвана')
+
+    if doc.is_deleted:
+        raise Http404('Документ больше не доступен')
+
+    if not doc.file:
+        raise Http404('Файл отсутствует')
+
+    # Отдаём файл как вложение (или inline — параметром)
+    as_attachment = request.GET.get('download') == '1'
+    return FileResponse(
+        doc.file.open('rb'),
+        as_attachment=as_attachment,
+        filename=doc.file.name.split('/')[-1],
+    )
+    
+@login_required
+def document_unshare(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Только POST'}, status=405)
+    doc = get_object_or_404(Document, pk=pk)
+    user = request.user
+    if not (doc.pet.owner == user or user in doc.pet.co_owners.all()):
+        return JsonResponse({'error': 'Нет доступа'}, status=403)
+    doc.is_public = False
+    doc.share_token = None
+    doc.save(update_fields=['is_public', 'share_token'])
+    return JsonResponse({'ok': True})
