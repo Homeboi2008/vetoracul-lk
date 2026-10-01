@@ -1,10 +1,15 @@
-{% extends 'base.html' %}
-{% block title %}Мои питомцы{% endblock %}
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}Мои питомцы — ВетОракул{% endblock %}
 
 {% block content %}
 <section class="page active">
     <div class="page-header">
-        <h1>Мои питомцы</h1>
+        <div>
+            <h1>Мои питомцы</h1>
+            <p class="page-subtitle">Все ваши питомцы и их карточки в одном месте</p>
+        </div>
         {% if user.role == 'user' %}
             <a href="{% url 'pet_add' %}" class="btn btn-primary">
                 <span>➕</span><span>Добавить питомца</span>
@@ -16,22 +21,30 @@
         {% for pet in pets %}
             <div class="pet-card">
                 <div class="pet-card__header">
-                    <div class="pet-card__avatar pet-card__avatar--letter">
-                        <div class="pet-mini-avatar pet-mini-avatar--blue">
-                            <span class="pet-mini-letter">{{ pet.name|slice:":1"|upper }}</span>
-                        </div>
+                    <div class="pet-card__avatar">
+                        {% if pet.photo %}
+                            <img src="{{ pet.photo.url }}" alt="{{ pet.name }}">
+                        {% else %}
+                            <div class="pet-card__avatar-placeholder">
+                                <span>{{ pet.name|slice:":1"|upper }}</span>
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="pet-card__info">
                         <h3 class="pet-card__name">{{ pet.name }}</h3>
                         <p class="pet-card__breed">
-                            {{ pet.animal_type }} • {{ pet.get_gender_display }}
+                            {{ pet.animal_type }}{% if pet.breed %}, {{ pet.breed }}{% endif %}
+                            • {% if pet.gender == 'M' %}♂{% else %}♀{% endif %}
                             {% if pet.age %} • {{ pet.age }} лет{% endif %}
                         </p>
                     </div>
-                    <span class="pet-card__status status-active">Активен</span>
+                    <span class="pet-card__status {{ pet.health_status_class }}">
+                        {{ pet.get_health_status_display }}
+                    </span>
                 </div>
 
                 <div class="pet-card__body">
+                    <!-- Владелец -->
                     <div class="pet-card__section">
                         <h4 class="section-title">👤 Владелец</h4>
                         <div class="info-row">
@@ -42,8 +55,23 @@
                             <span class="info-label">Телефон:</span>
                             <span class="info-value">{{ pet.owner.phone|default:"—" }}</span>
                         </div>
+                        <div class="info-row">
+                            <span class="info-label">Почта:</span>
+                            <span class="info-value">{{ pet.owner.email }}</span>
+                        </div>
+                        {% if pet.co_owners.all %}
+                            <div class="info-row">
+                                <span class="info-label">Совладельцы:</span>
+                                <span class="info-value">
+                                    {% for co in pet.co_owners.all %}
+                                        {{ co.get_full_name|default:co.username }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                        {% endif %}
                     </div>
 
+                    <!-- Медицинские данные -->
                     <div class="pet-card__section">
                         <h4 class="section-title">🩺 Медицинские данные</h4>
                         <div class="info-grid">
@@ -53,21 +81,43 @@
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Диагноз</span>
-                                <span class="info-value highlight">{{ pet.current_diagnosis|default:"Здоров"|truncatechars:40 }}</span>
+                                <span class="info-value highlight">{{ pet.current_diagnosis|default:"Нет данных"|truncatechars:40 }}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Документы -->
+                    <div class="pet-card__section">
+                        <h4 class="section-title">📎 Документы о лечении</h4>
+                        <div class="documents-list">
+                            {% for doc in pet.documents.all %}
+                                {% if not doc.is_deleted and forloop.counter <= 3 %}
+                                    <div class="document-item" onclick="window.open('{{ doc.file.url }}', '_blank')">
+                                        <span class="doc-icon">📄</span>
+                                        <div class="doc-info">
+                                            <span class="doc-name">{{ doc.title|default:doc.file.name|truncatechars:30 }}</span>
+                                            <span class="doc-size">{{ doc.date|date:"d.m.Y" }}</span>
+                                        </div>
+                                        <span class="doc-action">⬇️</span>
+                                    </div>
+                                {% endif %}
+                            {% empty %}
+                                <p class="text-muted" style="font-size:0.85rem;">Документов нет</p>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
 
                 <div class="pet-card__footer">
-                    <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-secondary">Открыть</a>
-                    {% if pet.owner == user %}
-                        <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-primary">Изменить</a>
+                    <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-secondary">📅 Открыть</a>
+                    {% if pet.owner == user or user in pet.co_owners.all %}
+                        <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-primary">✏️ Изменить</a>
                     {% endif %}
                 </div>
             </div>
         {% empty %}
             <div class="docs-empty" style="grid-column:1/-1;">
+                <div class="empty-icon">🐾</div>
                 <h3 class="empty-title">У вас пока нет питомцев</h3>
                 <p class="empty-text">Добавьте первого питомца, чтобы начать работу</p>
                 {% if user.role == 'user' %}

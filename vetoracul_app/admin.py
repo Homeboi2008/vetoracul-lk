@@ -5,15 +5,11 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-from .models import User, Pet, Diagnosis, Document, Reminder, Subscription
+from .models import User, Pet, Diagnosis, Document, Reminder, Subscription, PetCoOwner
 
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    """
-    Админка для кастомной модели User.
-    Расширяет стандартный UserAdmin, добавляя наши поля.
-    """
     list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'phone', 'city', 'is_active', 'is_staff')
     list_filter = ('role', 'is_active', 'is_staff', 'is_superuser')
     search_fields = ('username', 'first_name', 'last_name', 'email', 'phone')
@@ -62,19 +58,39 @@ class ReminderInline(admin.TabularInline):
     show_change_link = True
 
 
+class PetCoOwnerInline(admin.TabularInline):
+    """Совладельцы с уровнем доступа — редактируются как inline."""
+    model = PetCoOwner
+    extra = 1
+    fields = ('user', 'access_level', 'created_at')
+    readonly_fields = ('created_at',)
+    autocomplete_fields = ('user',)
+
+
 @admin.register(Pet)
 class PetAdmin(admin.ModelAdmin):
-    list_display = ('name', 'animal_type', 'owner', 'gender', 'birth_date', 'weight', 'created_at')
-    list_filter = ('animal_type', 'gender', 'owner')
+    list_display = ('name', 'animal_type', 'owner', 'gender', 'birth_date', 'weight', 'health_status', 'created_at')
+    list_filter = ('animal_type', 'gender', 'health_status', 'owner')
     search_fields = ('name', 'owner__first_name', 'owner__last_name', 'owner__username')
-    autocomplete_fields = ('owner', 'co_owners')
+    autocomplete_fields = ('owner',)
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
-        (None, {'fields': ('owner', 'co_owners', 'name', 'animal_type', 'gender', 'birth_date', 'weight')}),
+        (None, {'fields': ('owner', 'name', 'animal_type', 'breed', 'gender', 'birth_date', 'weight')}),
+        ('Здоровье', {'fields': ('health_status', 'notes')}),
+        ('Медиа', {'fields': ('photo',)}),
         ('Системные', {'fields': ('created_at', 'updated_at')}),
     )
-    inlines = (DiagnosisInline, DocumentInline, ReminderInline)
+    inlines = (PetCoOwnerInline, DiagnosisInline, DocumentInline, ReminderInline)
     ordering = ('-created_at',)
+
+
+@admin.register(PetCoOwner)
+class PetCoOwnerAdmin(admin.ModelAdmin):
+    list_display = ('pet', 'user', 'access_level', 'created_at')
+    list_filter = ('access_level', 'created_at')
+    search_fields = ('pet__name', 'user__first_name', 'user__last_name', 'user__username', 'user__email')
+    autocomplete_fields = ('pet', 'user')
+    readonly_fields = ('created_at',)
 
 
 @admin.register(Diagnosis)
@@ -141,7 +157,6 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
     @admin.action(description='Активировать выбранные подписки')
     def activate_selected(self, request, queryset):
-        # При активации проверяем, чтобы дата окончания была не в прошлом
         for sub in queryset:
             sub.is_active = True
             sub.status = Subscription.Status.ACTIVE

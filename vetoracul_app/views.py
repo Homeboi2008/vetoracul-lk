@@ -24,9 +24,10 @@ from datetime import timedelta
 def _send_pending_reminder_notifications(user=None):
     """
     Отправляет email-уведомления о напоминаниях, которые наступают завтра.
-    Работает для одного пользователя (если user передан) или для всех.
+    Учитывает пользовательские настройки: notify_appointments, notify_vaccinations.
     Повторно не отправляет — использует поле notified_at.
     """
+    from datetime import timedelta
     tomorrow = timezone.now().date() + timedelta(days=1)
 
     qs = Reminder.objects.filter(
@@ -41,11 +42,21 @@ def _send_pending_reminder_notifications(user=None):
     sent = 0
     for r in qs:
         owner = r.pet.owner
+
+        # --- Проверка настроек уведомлений ---
+        # Вакцинация / укол — управляется notify_vaccinations
+        if r.reminder_type in (Reminder.Type.VACCINATION, Reminder.Type.INJECTION):
+            if not owner.notify_vaccinations:
+                continue
+        # Осмотр / операция — управляется notify_appointments
+        elif r.reminder_type in (Reminder.Type.CHECKUP, Reminder.Type.SURGERY):
+            if not owner.notify_appointments:
+                continue
+        # Остальные типы (medication, grooming, other) — отправляем всегда
+
         recipients = []
         if owner.email:
             recipients.append(owner.email)
-
-        # Совладельцы тоже получают уведомление
         for co in r.pet.co_owners.all():
             if co.email:
                 recipients.append(co.email)
@@ -198,8 +209,9 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     success_url = reverse_lazy('password_reset_complete')
 
 
-class ProfileView(LoginRequiredMixin, TemplateView):
-    template_name = 'profile.html'
+class ProfileView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        return redirect(reverse('home') + '#settings')
 
 class VerifyEmailView(FormView):
     form_class = VerificationCodeForm
@@ -355,11 +367,7 @@ class DocumentUploadView(LoginRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.pet = get_object_or_404(Pet, pk=kwargs['pet_pk'])
         # Проверка доступа: владелец или совладелец или ветеринар
-        if not (
-            request.user == self.pet.owner
-            or request.user in self.pet.co_owners.all()
-            or request.user.role == 'vet'
-        ):
+        if not self.pet.can_edit(request.user):
             messages.error(request, 'Нет доступа к этому питомцу.')
             return redirect('folder_list')
         return super().dispatch(request, *args, **kwargs)
@@ -474,13 +482,7 @@ class PetDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     context_object_name = 'pet'
 
     def test_func(self):
-        pet = self.get_object()
-        user = self.request.user
-        return (
-            user.role == 'vet'
-            or pet.owner == user
-            or user in pet.co_owners.all()
-        )
+        return self.get_object().can_view(self.request.user)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -488,6 +490,7 @@ class PetDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         ctx['diagnoses'] = pet.diagnoses.order_by('-date')
         ctx['documents'] = pet.documents.filter(is_deleted=False).order_by('-date')
         ctx['reminders'] = pet.reminders.order_by('date', 'time')
+        ctx['can_edit'] = pet.can_edit(self.request.user)
         return ctx
 
 
@@ -498,8 +501,7 @@ class PetUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     success_url = reverse_lazy('pet_list')
 
     def test_func(self):
-        pet = self.get_object()
-        return pet.owner == self.request.user or self.request.user in pet.co_owners.all()
+        return self.get_object().can_edit(self.request.user)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -517,8 +519,7 @@ class PetDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('pet_list')
 
     def test_func(self):
-        # Удалять может только владелец
-        return self.get_object().owner == self.request.user
+        return self.get_object().can_delete(self.request.user)
 
     def form_valid(self, form):
         messages.success(self.request, 'Питомец удалён.')
@@ -536,12 +537,17 @@ from .forms import DiagnosisForm, DocumentForm, ReminderForm
 
 
 class PetAccessMixin(LoginRequiredMixin):
-    """Проверяет, что пользователь имеет доступ к питомцу (владелец/совладелец/ветеринар)."""
+    """Проверяет доступ к питомцу.
+    Атрибут required_access = 'view' | 'edit' (по умолчанию 'edit')."""
+
+    required_access = 'edit'
+
     def get_pet(self):
         pet = get_object_or_404(Pet, pk=self.kwargs['pet_pk'])
         user = self.request.user
-        if not (user.role == 'vet' or pet.owner == user or user in pet.co_owners.all()):
-            messages.error(self.request, 'Нет доступа к этому питомцу.')
+        allowed = pet.can_view(user) if self.required_access == 'view' else pet.can_edit(user)
+        if not allowed:
+            messages.error(self.request, 'Недостаточно прав для этого действия.')
             return None
         return pet
 
@@ -551,13 +557,17 @@ class PetAccessMixin(LoginRequiredMixin):
             return redirect('pet_list')
         return super().dispatch(request, *args, **kwargs)
 
-
 # ---------- ДИАГНОЗЫ ----------
 
 class DiagnosisCreateView(PetAccessMixin, CreateView):
     model = Diagnosis
     form_class = DiagnosisForm
     template_name = 'pets/diagnosis_form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['new_health_status'] = self.pet.health_status
+        return initial
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -566,6 +576,10 @@ class DiagnosisCreateView(PetAccessMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.pet = self.pet
+        new_status = form.cleaned_data.get('new_health_status')
+        if new_status and new_status != self.pet.health_status:
+            self.pet.health_status = new_status
+            self.pet.save(update_fields=['health_status'])
         messages.success(self.request, 'Диагноз добавлен.')
         return super().form_valid(form)
 
@@ -585,13 +599,19 @@ class DiagnosisUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'pets/diagnosis_form.html'
 
     def get_queryset(self):
-        # Разрешаем редактировать только диагнозы своих питомцев или если ветеринар
         user = self.request.user
         if user.role == 'vet':
             return Diagnosis.objects.all()
         return Diagnosis.objects.filter(
-            Q(pet__owner=user) | Q(pet__co_owners=user)
+            Q(pet__owner=user)
+            | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.object and self.object.pet:
+            initial['new_health_status'] = self.object.pet.health_status
+        return initial
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -599,6 +619,11 @@ class DiagnosisUpdateView(LoginRequiredMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
+        new_status = form.cleaned_data.get('new_health_status')
+        pet = self.object.pet
+        if new_status and new_status != pet.health_status:
+            pet.health_status = new_status
+            pet.save(update_fields=['health_status'])
         messages.success(self.request, 'Диагноз обновлён.')
         return super().form_valid(form)
 
@@ -621,7 +646,8 @@ class DiagnosisDeleteView(LoginRequiredMixin, DeleteView):
         if user.role == 'vet':
             return Diagnosis.objects.all()
         return Diagnosis.objects.filter(
-            Q(pet__owner=user) | Q(pet__co_owners=user)
+            Q(pet__owner=user)
+            | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
 
     def get_context_data(self, **kwargs):
@@ -674,9 +700,10 @@ class DocumentUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Document.objects.filter(is_deleted=False)
-        return Document.objects.filter(is_deleted=False).filter(
-            Q(pet__owner=user) | Q(pet__co_owners=user)
+            return Diagnosis.objects.all()
+        return Diagnosis.objects.filter(
+            Q(pet__owner=user)
+            | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
 
     def get_form_kwargs(self):
@@ -729,9 +756,10 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Reminder.objects.all()
-        return Reminder.objects.filter(
-            Q(pet__owner=user) | Q(pet__co_owners=user)
+            return Diagnosis.objects.all()
+        return Diagnosis.objects.filter(
+            Q(pet__owner=user)
+            | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
 
     def form_valid(self, form):
@@ -755,9 +783,10 @@ class ReminderDeleteView(LoginRequiredMixin, DeleteView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Reminder.objects.all()
-        return Reminder.objects.filter(
-            Q(pet__owner=user) | Q(pet__co_owners=user)
+            return Diagnosis.objects.all()
+        return Diagnosis.objects.filter(
+            Q(pet__owner=user)
+            | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
 
     def get_context_data(self, **kwargs):
@@ -848,6 +877,9 @@ def home_view(request):
         }
         for r in reminders
     ]
+    
+    profile_form = UserProfileForm(instance=user)
+    notification_form = NotificationSettingsForm(instance=user)
 
     context = {
         'pets': pets,
@@ -860,6 +892,8 @@ def home_view(request):
         'folders': folders,
         'folders_json': folders_json,
         'reminders_json': reminders_json,
+        'profile_form': profile_form,
+        'notification_form': notification_form,
     }
     return render(request, 'home.html', context)
 
@@ -1022,3 +1056,67 @@ def document_unshare(request, pk):
     doc.share_token = None
     doc.save(update_fields=['is_public', 'share_token'])
     return JsonResponse({'ok': True})
+
+@login_required
+def user_search(request):
+    """AJAX-поиск пользователей по email/имени для Select2."""
+    q = request.GET.get('q', '').strip()
+    qs = User.objects.filter(role='user').exclude(pk=request.user.pk)
+    if q:
+        qs = qs.filter(
+            Q(email__icontains=q)
+            | Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(username__icontains=q)
+        )
+    qs = qs.order_by('email')[:20]
+    results = [
+        {
+            'id': u.pk,
+            'text': f'{(u.get_full_name() or u.username)} — {u.email}',
+            'email': u.email,
+        }
+        for u in qs
+    ]
+    return JsonResponse({'results': results})
+
+from .forms import UserProfileForm, NotificationSettingsForm  # добавьте к существующим импортам
+
+
+@login_required
+def profile_update(request):
+    """POST — обновление профиля и/или фото."""
+    if request.method != 'POST':
+        return redirect('home')
+    form = UserProfileForm(request.POST, request.FILES, instance=request.user)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Профиль обновлён.')
+    else:
+        for errors in form.errors.values():
+            for e in errors:
+                messages.error(request, e)
+    return redirect(reverse('home') + '#settings')
+
+
+@login_required
+def profile_photo_delete(request):
+    """POST — удалить фото профиля."""
+    if request.method != 'POST':
+        return redirect('home')
+    if request.user.photo:
+        request.user.photo.delete(save=True)
+        messages.success(request, 'Фото профиля удалено.')
+    return redirect(reverse('home') + '#settings')
+
+
+@login_required
+def notification_settings_update(request):
+    """POST — сохранение настроек уведомлений."""
+    if request.method != 'POST':
+        return redirect('home')
+    form = NotificationSettingsForm(request.POST, instance=request.user)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Настройки уведомлений сохранены.')
+    return redirect(reverse('home') + '#settings')

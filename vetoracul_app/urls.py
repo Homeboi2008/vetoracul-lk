@@ -75,4 +75,10 @@ urlpatterns = [
     path('share/<uuid:token>/', views.document_public, name='document_public'),
     path('document/<int:pk>/unshare/', views.document_unshare, name='document_unshare'),
     path('document/<int:pk>/move/', views.document_move, name='document_move'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    
+    path('api/users/search/', views.user_search, name='user_search'),
+    
+    path('profile/update/', views.profile_update, name='profile_update'),
+    path('profile/photo/delete/', views.profile_photo_delete, name='profile_photo_delete'),
+    path('profile/notifications/', views.notification_settings_update, name='notification_settings_update'),
+]

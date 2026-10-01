@@ -1,0 +1,177 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ВетОракул{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <a href="{% url 'home' %}" class="logo" style="text-decoration:none;">
+                    <span class="logo-ic">🐾</span>
+                    <span class="logo-text">ВетОракул</span>
+                </a>
+                <div class="search">
+                    <input type="text" placeholder="Поиск">
+                </div>
+                <div class="user-actions">
+                    <div class="notifications-wrapper">
+                        <button class="notification-btn" onclick="toggleNotifications()" title="Уведомления">
+                            🔔
+                            <span class="notification-badge">0</span>
+                        </button>
+                        <div class="notifications-panel" id="notificationsPanel">
+                            <div class="notifications-panel__header">
+                                <h4 class="notifications-panel__title">Уведомления</h4>
+                                <button class="notifications-panel__clear" onclick="stubAction('Очистка уведомлений')">Очистить</button>
+                            </div>
+                            <div class="notifications-panel__divider"></div>
+                            <div class="notifications-empty">
+                                <div class="empty-icon">🔔</div>
+                                <p class="empty-text">Уведомлений нет</p>
+                                <p class="empty-subtext">Здесь будут отображаться напоминания о приемах</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="user-avatar-wrapper">
+                        <div class="user-avatar" onclick="toggleUserPanel()" title="Профиль" style="overflow:hidden;padding:0;">
+                            {% if user.photo %}
+                                <img src="{{ user.photo.url }}" alt="{{ user.username }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            {% else %}
+                                {{ user.get_full_name|default:user.username|slice:":2"|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="user-panel" id="userPanel">
+                            <div class="user-panel__header">
+                                <div class="user-panel__avatar" style="overflow:hidden;padding:0;">
+                                    {% if user.photo %}
+                                        <img src="{{ user.photo.url }}" alt="{{ user.username }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                    {% else %}
+                                        {{ user.get_full_name|default:user.username|slice:":2"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h4 class="user-panel__name">{{ user.get_full_name|default:user.username }}</h4>
+                                    <span class="user-panel__role">{{ user.get_role_display }}</span>
+                                </div>
+                            </div>
+                            <div class="user-panel__divider"></div>
+                            <div class="user-panel__details">
+                                <div class="user-detail-row">
+                                    <span class="row-icon">📱</span>
+                                    <span>{{ user.phone|default:"—" }}</span>
+                                </div>
+                                <div class="user-detail-row">
+                                    <span class="row-icon">✉️</span>
+                                    <span>{{ user.email }}</span>
+                                </div>
+                                <div class="user-detail-row">
+                                    <span class="row-icon">📍</span>
+                                    <span>{{ user.city|default:"—" }}</span>
+                                </div>
+                            </div>
+                            <div class="user-panel__divider"></div>
+                            <a href="{% url 'home' %}#settings" class="btn btn-secondary" style="width:100%;">⚙️ Настройки профиля</a>
+                            <form method="post" action="{% url 'logout' %}" style="width:100%;margin-top:8px;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline" style="width:100%;">Выйти</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <nav class="menu">
+                    <div class="menu-section">
+                        <h3>Меню</h3>
+                        <ul>
+                            {% with url_name=request.resolver_match.url_name %}
+                            <li class="menu-item {% if url_name == 'home' %}active{% endif %}">
+                                <a href="{% url 'home' %}" style="display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;width:100%;">
+                                    <span class="icon">📊</span><span>Панель</span>
+                                </a>
+                            </li>
+                            <li class="menu-item {% if 'pet' in url_name or 'diagnosis' in url_name %}active{% endif %}">
+                                <a href="{% url 'pet_list' %}" style="display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;width:100%;">
+                                    <span class="icon">🐾</span><span>Питомцы</span>
+                                </a>
+                            </li>
+                            <li class="menu-item {% if 'folder' in url_name or 'trash' in url_name or 'document' in url_name %}active{% endif %}">
+                                <a href="{% url 'home' %}#documents" style="display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;width:100%;">
+                                    <span class="icon">📁</span><span>Документы</span>
+                                </a>
+                            </li>
+                            <li class="menu-item {% if 'reminder' in url_name %}active{% endif %}">
+                                <a href="{% url 'home' %}#reminders" style="display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;width:100%;">
+                                    <span class="icon">⏰</span><span>Напоминания</span>
+                                </a>
+                            </li>
+                            {% endwith %}
+                        </ul>
+                    </div>
+                    <div class="menu-section">
+                        <h3>Настройки</h3>
+                        <ul>
+                            <li class="menu-item">
+                                <a href="{% url 'home' %}#settings" style="display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;width:100%;">
+                                    <span class="icon">⚙️</span><span>Параметры</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="content">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" style="padding:12px 20px;border-radius:12px;margin-bottom:16px;
+                            {% if message.tags == 'success' %}background:#d1fae5;color:#065f46;
+                            {% elif message.tags == 'error' %}background:#fee2e2;color:#991b1b;
+                            {% else %}background:#e0e7ff;color:#3730a3;{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function toggleUserPanel() {
+            document.getElementById('userPanel').classList.toggle('active');
+            document.getElementById('notificationsPanel').classList.remove('active');
+        }
+        function toggleNotifications() {
+            document.getElementById('notificationsPanel').classList.toggle('active');
+            document.getElementById('userPanel').classList.remove('active');
+        }
+        function stubAction(name) { alert(`⚠️ Функция "${name}" находится в разработке.`); }
+        document.addEventListener('click', (e) => {
+            const userPanel = document.getElementById('userPanel');
+            const avatarWrapper = document.querySelector('.user-avatar-wrapper');
+            const notif = document.getElementById('notificationsPanel');
+            const notifWrapper = document.querySelector('.notifications-wrapper');
+            if (userPanel && userPanel.classList.contains('active') && !avatarWrapper.contains(e.target)) {
+                userPanel.classList.remove('active');
+            }
+            if (notif && notif.classList.contains('active') && !notifWrapper.contains(e.target)) {
+                notif.classList.remove('active');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,55 +1,311 @@
-{% extends 'base.html' %}
-{% block title %}{% if object %}Редактирование{% else %}Новый питомец{% endif %}{% endblock %}
+{% extends 'base_app.html' %}
+{% load static l10n %}
+
+{% block title %}{% if object %}Редактирование питомца{% else %}Новый питомец{% endif %} — ВетОракул{% endblock %}
 
 {% block content %}
-<div class="form-container">
+<div class="pet-form-wrapper">
+
     <div class="form-header-block">
-        <h1 class="form-title">{% if object %}Редактирование питомца{% else %}Новый питомец{% endif %}</h1>
-    </div>
-    <div class="photo-upload">
-        <div class="photo-preview" id="photoPreview">
-            {% if object and object.photo %}
-                <img src="{{ object.photo.url }}" alt="{{ object.name }}" class="photo-preview-img">
+        <h1 class="form-title">
+            {% if object %}Редактирование питомца{% else %}Новый питомец{% endif %}
+        </h1>
+        <p class="form-subtitle">
+            {% if object %}
+                Измените информацию о питомце и сохраните обновления
             {% else %}
-                <span class="photo-placeholder-icon">📷</span>
-                <span class="photo-placeholder-text">Добавить фото</span>
+                Заполните информацию о вашем питомце для создания карточки
             {% endif %}
-        </div>
-        <input type="file" id="petPhoto" accept="image/*" name="photo" class="photo-input" onchange="previewPhoto(event)" style="display:none;">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('petPhoto').click()">
-            {% if object and object.photo %}Изменить фото{% else %}Выбрать файл{% endif %}
-        </button>
+        </p>
     </div>
-    <form method="post" enctype="multipart/form-data" class="pet-form">
+
+    <form class="pet-form" method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
-        {% for field in form %}
-            <div class="form-group">
-                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<p class="form-hint">{{ field.help_text }}</p>{% endif %}
-                {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
+
+        <!-- ===== ФОТО ===== -->
+        <div class="photo-upload">
+            <div class="photo-preview {% if object and object.photo %}has-image{% endif %}" id="photoPreview">
+                {% if object and object.photo %}
+                    <img src="{{ object.photo.url }}" alt="{{ object.name }}" class="photo-preview-img">
+                {% else %}
+                    <span class="photo-placeholder-icon">📷</span>
+                    <span class="photo-placeholder-text">Добавить фото</span>
+                {% endif %}
             </div>
-        {% endfor %}
+            <input type="file" id="id_photo" name="photo" accept="image/*"
+                   class="photo-input" style="display:none;"
+                   onchange="previewPhoto(event)">
+            <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('id_photo').click()">
+                {% if object and object.photo %}Изменить фото{% else %}Выбрать файл{% endif %}
+            </button>
+        </div>
+
+        <!-- ===== ОСНОВНАЯ ИНФОРМАЦИЯ ===== -->
+        <div class="form-section-title">Основная информация</div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="id_name">Кличка *</label>
+                <input type="text" id="id_name" name="name" class="form-input"
+                       placeholder="Например, Барсик"
+                       value="{{ form.name.value|default:'' }}" required>
+                {% if form.name.errors %}<p class="form-hint error">{{ form.name.errors }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="id_animal_type">Вид животного *</label>
+                <input type="text" id="id_animal_type" name="animal_type" class="form-input"
+                       placeholder="Например, Кот, Собака, Кролик"
+                       value="{{ form.animal_type.value|default:'' }}" required>
+                {% if form.animal_type.errors %}<p class="form-hint error">{{ form.animal_type.errors }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="id_breed">Порода</label>
+                <input type="text" id="id_breed" name="breed" class="form-input"
+                       placeholder="Например, Британская"
+                       value="{{ form.breed.value|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Пол *</label>
+                <div class="gender-selector">
+                    <label class="gender-option">
+                        <input type="radio" name="gender" value="M"
+                               {% if form.gender.value == 'M' %}checked{% endif %} required>
+                        <span class="gender-custom">♂</span>
+                        <span class="gender-text">Мальчик</span>
+                    </label>
+                    <label class="gender-option">
+                        <input type="radio" name="gender" value="F"
+                               {% if form.gender.value == 'F' %}checked{% endif %}>
+                        <span class="gender-custom">♀</span>
+                        <span class="gender-text">Девочка</span>
+                    </label>
+                </div>
+                {% if form.gender.errors %}<p class="form-hint error">{{ form.gender.errors }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="id_birth_date">Дата рождения</label>
+                <input type="date" id="id_birth_date" name="birth_date" class="form-input"
+                       value="{{ form.birth_date.value|date:'Y-m-d'|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="id_weight">Вес (кг)</label>
+                <input type="number" id="id_weight" name="weight" class="form-input"
+                    placeholder="4.5" step="0.01" min="0" max="200"
+                    value="{{ form.weight.value|unlocalize|default:'' }}">
+                {% if form.weight.errors %}<p class="form-hint error">{{ form.weight.errors }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="id_health_status">Состояние здоровья</label>
+            <select id="id_health_status" name="health_status" class="form-input">
+                {% for value, label in form.fields.health_status.choices %}
+                    <option value="{{ value }}"
+                        {% if form.health_status.value == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- ===== СОВЛАДЕЛЬЦЫ ===== -->
+        <div class="form-section-title">Совладельцы</div>
+
+        <div class="form-group">
+            <label class="form-label" for="id_co_owners">Добавьте совладельцев</label>
+            <select id="id_co_owners" name="co_owners" multiple="multiple" style="width: 100%;">
+                {% for u in form.fields.co_owners.queryset %}
+                    <option value="{{ u.pk }}"
+                        {% if object and u in object.co_owners.all %}selected{% endif %}>
+                        {{ u.get_full_name|default:u.username }} — {{ u.email }}
+                    </option>
+                {% endfor %}
+            </select>
+            <p class="form-hint">
+                Начните вводить email или имя. Для каждого выбранного совладельца ниже появится выбор уровня доступа.
+            </p>
+        </div>
+
+        <div class="form-group" id="coOwnerLevelsBlock" style="display:none;">
+            <label class="form-label">Уровни доступа</label>
+            <div id="coOwnerLevelsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
+        <!-- ===== ДОПОЛНИТЕЛЬНО ===== -->
+        <div class="form-section-title">Дополнительно</div>
+
+        <div class="form-group">
+            <label class="form-label" for="id_notes">Особые заметки</label>
+            <textarea id="id_notes" name="notes" class="form-input form-textarea"
+                      rows="4"
+                      placeholder="Аллергии, особенности поведения, хронические заболевания...">{{ form.notes.value|default:'' }}</textarea>
+        </div>
+
+        <!-- ===== КНОПКИ ===== -->
         <div class="form-actions">
             <a href="{% url 'pet_list' %}" class="btn btn-secondary">Отмена</a>
-            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <button type="submit" class="btn btn-primary">
+                <span>{% if object %}Сохранить изменения{% else %}Создать карточку{% endif %}</span>
+                <span class="btn-arrow">→</span>
+            </button>
         </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
+    // Предпросмотр фото
     function previewPhoto(event) {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             const preview = document.getElementById('photoPreview');
-            preview.innerHTML = `<img src="${e.target.result}" class="photo-preview-img" alt="">`;
+            preview.innerHTML = `<img src="${e.target.result}" alt="" class="photo-preview-img">`;
             preview.classList.add('has-image');
         };
         reader.readAsDataURL(file);
     }
+
+    // Уровни доступа совладельцев
+    const coOwnerLevels = {{ form.get_co_owner_levels_json|safe }};
+
+    function renderCoOwnerLevels() {
+        const selected = $('#id_co_owners').select2('data'); // массив {id, text}
+        const list = document.getElementById('coOwnerLevelsList');
+        const block = document.getElementById('coOwnerLevelsBlock');
+        list.innerHTML = '';
+
+        if (!selected || selected.length === 0) {
+            block.style.display = 'none';
+            return;
+        }
+        block.style.display = 'block';
+
+        selected.forEach(u => {
+            const uid = String(u.id);
+            const currentLevel = coOwnerLevels[uid] || 'read';
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f5f0ff;border-radius:12px;border:1px solid #e0d6f0;';
+            row.innerHTML = `
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.9rem;color:#2d1b4e;">${u.text}</div>
+                </div>
+                <select name="co_owner_level_${uid}" class="form-input" style="max-width:220px;">
+                    <option value="read" ${currentLevel === 'read' ? 'selected' : ''}>Только просмотр</option>
+                    <option value="write" ${currentLevel === 'write' ? 'selected' : ''}>Полный доступ</option>
+                </select>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    $(document).ready(function () {
+        $('#id_co_owners').select2({
+            placeholder: 'Введите email или имя...',
+            allowClear: true,
+            minimumInputLength: 1,
+            width: '100%',
+            ajax: {
+                url: "{% url 'user_search' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term };
+                },
+                processResults: function (data) {
+                    return { results: data.results };
+                },
+                cache: true,
+            },
+            language: {
+                inputTooShort: function () { return 'Введите хотя бы 1 символ'; },
+                noResults: function () { return 'Никого не найдено'; },
+                searching: function () { return 'Поиск...'; },
+                removeAllItems: function () { return 'Убрать всех'; },
+            },
+        });
+
+        $('#id_co_owners').on('change', renderCoOwnerLevels);
+        renderCoOwnerLevels();
+    });
+
+    // Страховка: клик по метке «Пол» переключает radio
+    document.querySelectorAll('.gender-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const input = opt.querySelector('input[type="radio"]');
+            if (input) input.checked = true;
+        });
+    });
 </script>
+{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Стилизация Select2 под дизайн ВетОракул */
+    .select2-container--default .select2-selection--multiple {
+        border: 1.5px solid var(--color-border);
+        border-radius: 12px;
+        min-height: 44px;
+        padding: 4px 8px;
+        background: #fff;
+        transition: border-color 0.2s;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--multiple,
+    .select2-container--default.select2-container--open .select2-selection--multiple {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        color: var(--color-primary);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.85rem;
+        margin-top: 4px;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: var(--color-danger);
+        margin-right: 6px;
+        border: none;
+        background: none;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #991b1b;
+        background: none;
+    }
+    .select2-container--default .select2-search--inline .select2-search__field {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        margin-top: 6px;
+        padding: 0 4px;
+    }
+    .select2-dropdown {
+        border: 1.5px solid var(--color-border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background: var(--color-bg);
+        color: var(--color-primary);
+    }
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background: #ede9fe;
+        color: var(--color-primary);
+    }
+</style>
 {% endblock %}

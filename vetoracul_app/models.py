@@ -46,6 +46,18 @@ class User(AbstractUser):
         blank=True,
         verbose_name='Город проживания'
     )
+    
+    photo = models.ImageField(
+        upload_to='users/%Y/%m/%d/',
+        blank=True, null=True,
+        verbose_name='Фото профиля'
+    )
+
+    # Настройки уведомлений
+    notify_appointments = models.BooleanField(default=True, verbose_name='Записи на приём')
+    notify_vaccinations = models.BooleanField(default=True, verbose_name='Напоминания о вакцинации')
+    notify_urgent = models.BooleanField(default=True, verbose_name='Срочные случаи')
+    notify_news = models.BooleanField(default=False, verbose_name='Новости и обновления')
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -83,8 +95,11 @@ class Pet(models.Model):
         related_name='pets', verbose_name='Владелец'
     )
     co_owners = models.ManyToManyField(
-        User, related_name='co_owned_pets',
-        blank=True, verbose_name='Совладельцы'
+        User,
+        through='PetCoOwner',
+        related_name='co_owned_pets',
+        blank=True,
+        verbose_name='Совладельцы'
     )
     name = models.CharField(max_length=100, verbose_name='Кличка')
     animal_type = models.CharField(max_length=50, verbose_name='Вид животного')
@@ -105,6 +120,12 @@ class Pet(models.Model):
         default=HealthStatus.HEALTHY,
         verbose_name='Состояние здоровья'
     )
+    
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='Особые заметки'
+    )
 
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name='Пол')
     birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
@@ -124,6 +145,44 @@ class Pet(models.Model):
     def __str__(self):
         return f'{self.name} (владелец: {self.owner.get_full_name()})'
 
+        # --- Права доступа ---
+    def is_owner(self, user):
+        return user.is_authenticated and self.owner_id == user.id
+
+    def is_co_owner(self, user):
+        if not user.is_authenticated:
+            return False
+        return self.co_owner_links.filter(user=user).exists()
+
+    def co_owner_access_level(self, user):
+        """Возвращает 'read' / 'write' / None."""
+        if not user.is_authenticated:
+            return None
+        link = self.co_owner_links.filter(user=user).first()
+        return link.access_level if link else None
+
+    def can_view(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.role == 'vet':
+            return True
+        return self.is_owner(user) or self.is_co_owner(user)
+
+    def can_edit(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.role == 'vet':
+            return True
+        if self.is_owner(user):
+            return True
+        return self.co_owner_links.filter(
+            user=user, access_level=PetCoOwner.AccessLevel.WRITE
+        ).exists()
+
+    def can_delete(self, user):
+        """Удалять может только владелец."""
+        return self.is_owner(user)
+    
     @property
     def age(self):
         if self.birth_date:
@@ -175,6 +234,10 @@ class Diagnosis(models.Model):
     diagnosis_text = models.TextField(
         verbose_name='Диагноз'
     )
+    treatment = models.TextField(
+        blank=True,
+        verbose_name='Прописанное лечение'
+    )
     date = models.DateField(
         default=timezone.now,
         verbose_name='Дата постановки диагноза'
@@ -204,7 +267,7 @@ class Diagnosis(models.Model):
 
     def __str__(self):
         return f'{self.pet.name}: {self.diagnosis_text[:30]}... ({self.date})'
-
+    
 
 class Folder(models.Model):
     """
@@ -492,3 +555,36 @@ class EmailVerificationCode(models.Model):
 
     def __str__(self):
         return f"{self.user.email} – {self.code}"
+    
+class PetCoOwner(models.Model):
+    """Связь питомца с совладельцем и его уровнем доступа."""
+    class AccessLevel(models.TextChoices):
+        READ = 'read', 'Только просмотр'
+        WRITE = 'write', 'Полный доступ'
+
+    pet = models.ForeignKey(
+        Pet, on_delete=models.CASCADE,
+        related_name='co_owner_links',
+        verbose_name='Питомец'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='co_owned_pet_links',
+        verbose_name='Совладелец'
+    )
+    access_level = models.CharField(
+        max_length=10,
+        choices=AccessLevel.choices,
+        default=AccessLevel.READ,
+        verbose_name='Уровень доступа'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
+
+    class Meta:
+        verbose_name = 'Совладелец'
+        verbose_name_plural = 'Совладельцы'
+        unique_together = ('pet', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user.get_full_name() or self.user.username} → {self.pet.name} ({self.get_access_level_display()})'

@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.forms import (
     UserCreationForm, AuthenticationForm, PasswordResetForm, SetPasswordForm
 )
-from .models import Diagnosis, Reminder, User, EmailVerificationCode, Folder, Document, Pet
+from .models import Diagnosis, Reminder, User, EmailVerificationCode, Folder, Document, Pet, PetCoOwner
 
 
 # =========================================================
@@ -141,28 +141,48 @@ class VerificationCodeForm(forms.Form):
 # Питомец
 # =========================================================
 class PetForm(forms.ModelForm):
+    co_owners = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'form-input', 'id': 'id_co_owners'}),
+        label='Совладельцы',
+    )
+
     class Meta:
         model = Pet
         fields = (
             'name', 'animal_type', 'breed', 'gender', 'birth_date',
-            'weight', 'health_status', 'photo', 'co_owners'
+            'weight', 'health_status', 'photo', 'notes',
         )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        apply_input_classes(
-            self.fields,
-            select_fields={'gender', 'health_status', 'co_owners'}
-        )
+
+        for name, field in self.fields.items():
+            if name in ('photo', 'co_owners'):
+                continue
+            if name in {'gender', 'health_status'}:
+                field.widget.attrs.update({'class': 'form-input form-select'})
+            else:
+                field.widget.attrs.update({'class': 'form-input'})
+
         if self.user:
             self.fields['co_owners'].queryset = (
                 User.objects.filter(role='user').exclude(pk=self.user.pk)
             )
-        self.fields['co_owners'].required = False
+
         self.fields['birth_date'].required = False
         self.fields['breed'].required = False
         self.fields['photo'].required = False
+        self.fields['notes'].required = False
+        self.fields['co_owners'].required = False
+
+        # Начальные значения для Select2
+        if self.instance.pk:
+            self.fields['co_owners'].initial = list(
+                self.instance.co_owners.values_list('pk', flat=True)
+            )
 
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')
@@ -170,24 +190,79 @@ class PetForm(forms.ModelForm):
             raise forms.ValidationError('Вес должен быть больше нуля.')
         return weight
 
+    def get_co_owner_levels_json(self):
+        """JSON со текущими уровнями доступа для JS в шаблоне."""
+        import json
+        levels = {}
+        if self.instance.pk:
+            for link in self.instance.co_owner_links.all():
+                levels[str(link.user_id)] = link.access_level
+        return json.dumps(levels)
+
+    def save(self, commit=True):
+        pet = super().save(commit=commit)
+        if not commit:
+            return pet
+
+        selected = self.cleaned_data.get('co_owners') or []
+        selected_ids = {u.pk for u in selected}
+
+        # Удаляем тех, кто больше не выбран
+        for link in pet.co_owner_links.all():
+            if link.user_id not in selected_ids:
+                link.delete()
+
+        # Обновляем/создаём
+        for user in selected:
+            level = (self.data.get(f'co_owner_level_{user.pk}') or 'read').strip()
+            if level not in dict(PetCoOwner.AccessLevel.choices):
+                level = PetCoOwner.AccessLevel.READ
+
+            link = pet.co_owner_links.filter(user=user).first()
+            if link:
+                if link.access_level != level:
+                    link.access_level = level
+                    link.save(update_fields=['access_level'])
+            else:
+                PetCoOwner.objects.create(pet=pet, user=user, access_level=level)
+
+        return pet
+
 
 # =========================================================
 # Диагноз
 # =========================================================
 class DiagnosisForm(forms.ModelForm):
+    new_health_status = forms.ChoiceField(
+        choices=Pet.HealthStatus.choices,
+        required=False,
+        label='Обновить состояние питомца',
+        widget=forms.Select(attrs={'class': 'form-input form-select'}),
+        help_text='Оставьте пустым, чтобы не менять текущее состояние',
+    )
+
     class Meta:
         model = Diagnosis
-        fields = ('diagnosis_text', 'date', 'status', 'vet')
+        fields = ('diagnosis_text', 'treatment', 'date', 'status', 'vet')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        # Установим текущее состояние питомца как начальное значение
+        if self.instance and self.instance.pk and self.instance.pet_id:
+            self.fields['new_health_status'].initial = self.instance.pet.health_status
+        elif 'initial' in kwargs and kwargs['initial']:
+            pass
+
         apply_input_classes(self.fields, select_fields={'status', 'vet'})
+
         if self.user and self.user.role != 'vet':
             self.fields.pop('vet', None)
         else:
             self.fields['vet'].queryset = User.objects.filter(role='vet')
             self.fields['vet'].required = False
+        self.fields['treatment'].required = False
 
     def clean_date(self):
         date = self.cleaned_data.get('date')
@@ -267,3 +342,28 @@ class FolderForm(forms.ModelForm):
         if Folder.objects.filter(owner=self.owner, parent=parent, name=name).exists():
             raise forms.ValidationError('Папка с таким именем уже существует здесь.')
         return name
+    
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'phone', 'city', 'photo')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == 'photo':
+                continue
+            field.widget.attrs.update({'class': 'form-input'})
+        self.fields['photo'].required = False
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Этот email уже занят.')
+        return email
+
+
+class NotificationSettingsForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('notify_appointments', 'notify_vaccinations', 'notify_urgent', 'notify_news')
