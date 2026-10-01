@@ -15,7 +15,7 @@ from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.db.models import Q
 
-from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document
+from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document, VetAccess, VetAccessRequest
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm
 
 from datetime import timedelta
@@ -576,14 +576,23 @@ class DiagnosisCreateView(PetAccessMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.pet = self.pet
+
+        # Автоподстановка врача
+        if self.request.user.role == 'vet':
+            form.instance.vet = self.request.user
+
+        # Обновление состояния питомца
         new_status = form.cleaned_data.get('new_health_status')
         if new_status and new_status != self.pet.health_status:
             self.pet.health_status = new_status
             self.pet.save(update_fields=['health_status'])
+
         messages.success(self.request, 'Диагноз добавлен.')
         return super().form_valid(form)
 
     def get_success_url(self):
+        if self.request.user.role == 'vet':
+            return reverse_lazy('vet_patient_card', kwargs={'pk': self.pet.pk})
         return reverse_lazy('pet_detail', kwargs={'pk': self.pet.pk})
 
     def get_context_data(self, **kwargs):
@@ -601,10 +610,9 @@ class DiagnosisUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Diagnosis.objects.all()
+            return Diagnosis.objects.filter(vet=user)
         return Diagnosis.objects.filter(
-            Q(pet__owner=user)
-            | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
+            Q(pet__owner=user) | Q(pet__co_owners=user)
         ).distinct()
 
     def get_initial(self):
@@ -619,15 +627,22 @@ class DiagnosisUpdateView(LoginRequiredMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
+        # Если врач не менял поле vet (или оно недоступно), оставляем как было
+        if self.request.user.role == 'vet' and 'vet' not in form.cleaned_data:
+            form.instance.vet = self.request.user
+
         new_status = form.cleaned_data.get('new_health_status')
         pet = self.object.pet
         if new_status and new_status != pet.health_status:
             pet.health_status = new_status
             pet.save(update_fields=['health_status'])
+
         messages.success(self.request, 'Диагноз обновлён.')
         return super().form_valid(form)
 
     def get_success_url(self):
+        if self.request.user.role == 'vet':
+            return reverse_lazy('vet_patient_card', kwargs={'pk': self.object.pet.pk})
         return reverse_lazy('pet_detail', kwargs={'pk': self.object.pet.pk})
 
     def get_context_data(self, **kwargs):
@@ -810,12 +825,15 @@ class VetDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        pets = Pet.objects.all().order_by('-created_at')
-        ctx['patients'] = pets[:20]
-        ctx['patients_count'] = pets.count()
+        accesses = VetAccess.objects.filter(vet=self.request.user).select_related('pet', 'pet__owner')
+        ctx['accesses'] = accesses
+        ctx['patients'] = [a.pet for a in accesses]
+        ctx['patients_count'] = len(ctx['patients'])
         ctx['today'] = timezone.now().date()
         ctx['today_reminders'] = Reminder.objects.filter(
-            date=timezone.now().date(), status='pending'
+            pet__in=ctx['patients'],
+            date=timezone.now().date(),
+            status='pending'
         ).select_related('pet', 'pet__owner')
         return ctx
     
@@ -843,11 +861,6 @@ def home_view(request):
         'documents': documents.count(),
         'reminders': reminders.filter(status=Reminder.Status.PENDING).count(),
     }
-
-    upcoming_reminders = reminders.filter(
-        status=Reminder.Status.PENDING,
-        date__gte=timezone.now().date()
-    )[:5]
 
     pets_filter = [{'id': p.id, 'name': p.name} for p in pets]
 
@@ -881,12 +894,26 @@ def home_view(request):
     profile_form = UserProfileForm(instance=user)
     notification_form = NotificationSettingsForm(instance=user)
 
+    # === Уведомления ===
+    # 1. Заявки ветеринаров на доступ к питомцам пользователя
+    pending_vet_requests = VetAccessRequest.objects.filter(
+        pet__owner=user, status='pending'
+    ).select_related('vet', 'pet').order_by('-created_at')
+
+    # 2. Прошедшие напоминания с незакрытым статусом
+    past_pending_reminders = Reminder.objects.filter(
+        pet__in=pets,
+        status=Reminder.Status.PENDING,
+        date__lt=timezone.now().date(),
+    ).select_related('pet').order_by('-date')[:20]
+
+    notifications_count = pending_vet_requests.count() + past_pending_reminders.count()
+
     context = {
         'pets': pets,
         'documents': documents,
         'deleted_documents': deleted_documents,
         'reminders': reminders,
-        'upcoming_reminders': upcoming_reminders,
         'stats': stats,
         'pets_filter': pets_filter,
         'folders': folders,
@@ -894,6 +921,9 @@ def home_view(request):
         'reminders_json': reminders_json,
         'profile_form': profile_form,
         'notification_form': notification_form,
+        'pending_vet_requests': pending_vet_requests,
+        'past_pending_reminders': past_pending_reminders,
+        'notifications_count': notifications_count,
     }
     return render(request, 'home.html', context)
 
@@ -947,14 +977,27 @@ class VetPatientCardView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     context_object_name = 'pet'
 
     def test_func(self):
-        return self.request.user.role == 'vet'
+        pet = self.get_object()
+        return self.request.user.role == 'vet' and pet.can_view(self.request.user)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         pet = self.get_object()
+        user = self.request.user
+
         ctx['diagnoses'] = pet.diagnoses.order_by('-date')
         ctx['documents'] = pet.documents.filter(is_deleted=False).order_by('-date')
         ctx['reminders'] = pet.reminders.order_by('date', 'time')
+
+        # Права
+        ctx['can_edit'] = pet.can_edit(user)
+        ctx['can_add'] = pet.can_add(user)
+
+        # Уровень доступа
+        access = VetAccess.objects.filter(vet=user, pet=pet).first()
+        ctx['access'] = access
+        ctx['access_level_display'] = access.get_access_level_display() if access else '—'
+
         return ctx
     
 class VetMedicalRecordCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
@@ -967,7 +1010,16 @@ class VetMedicalRecordCreateView(LoginRequiredMixin, UserPassesTestMixin, Create
 
     def dispatch(self, request, *args, **kwargs):
         self.pet = get_object_or_404(Pet, pk=kwargs['pet_pk'])
+        # Проверяем, что у ветеринара есть доступ
+        if not self.pet.can_view(request.user):
+            messages.error(request, 'Нет доступа к этому питомцу.')
+            return redirect('vet_patient_search')
         return super().dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['new_health_status'] = self.pet.health_status
+        return initial
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -976,7 +1028,13 @@ class VetMedicalRecordCreateView(LoginRequiredMixin, UserPassesTestMixin, Create
 
     def form_valid(self, form):
         form.instance.pet = self.pet
-        form.instance.vet = self.request.user
+        form.instance.vet = self.request.user  # ← всегда сам ветеринар
+
+        new_status = form.cleaned_data.get('new_health_status')
+        if new_status and new_status != self.pet.health_status:
+            self.pet.health_status = new_status
+            self.pet.save(update_fields=['health_status'])
+
         messages.success(self.request, 'Медицинская запись добавлена.')
         return super().form_valid(form)
 
@@ -1120,3 +1178,143 @@ def notification_settings_update(request):
         form.save()
         messages.success(request, 'Настройки уведомлений сохранены.')
     return redirect(reverse('home') + '#settings')
+
+
+@login_required
+def vet_patient_search(request):
+    """Ветеринар ищет владельца по email."""
+    if request.user.role != 'vet':
+        return redirect('home')
+
+    email_query = request.GET.get('email', '').strip()
+    found_user = None
+    pets = []
+
+    if email_query:
+        found_user = User.objects.filter(
+            role='user', email__iexact=email_query
+        ).first()
+        if found_user:
+            pets = Pet.objects.filter(owner=found_user).order_by('name')
+
+    # Уже одобренные доступы и активные заявки
+    existing_access = {}
+    pending_requests = {}
+    if found_user:
+        for a in VetAccess.objects.filter(vet=request.user, pet__owner=found_user):
+            existing_access[a.pet_id] = a.access_level
+        for r in VetAccessRequest.objects.filter(
+            vet=request.user, pet__owner=found_user, status='pending'
+        ):
+            pending_requests[r.pet_id] = r.access_level
+
+    context = {
+        'email_query': email_query,
+        'found_user': found_user,
+        'pets': pets,
+        'existing_access': existing_access,
+        'pending_requests': pending_requests,
+    }
+    return render(request, 'vet/patient_search.html', context)
+
+
+@login_required
+def vet_request_access(request, pet_pk):
+    """POST — создать заявку на доступ к питомцу."""
+    if request.user.role != 'vet':
+        return redirect('home')
+    if request.method != 'POST':
+        return redirect('vet_patient_search')
+
+    pet = get_object_or_404(Pet, pk=pet_pk)
+    level = request.POST.get('access_level', 'view')
+    if level not in dict(VetAccessRequest.AccessLevel.choices):
+        level = 'view'
+
+    # Уже есть доступ?
+    if VetAccess.objects.filter(vet=request.user, pet=pet).exists():
+        messages.info(request, 'У вас уже есть доступ к этому питомцу.')
+        return redirect('vet_patient_search')
+
+    # Уже есть активная заявка?
+    existing = VetAccessRequest.objects.filter(
+        vet=request.user, pet=pet, status='pending'
+    ).first()
+    if existing:
+        existing.access_level = level
+        existing.message = request.POST.get('message', '')
+        existing.save(update_fields=['access_level', 'message'])
+        messages.info(request, 'Заявка обновлена.')
+    else:
+        VetAccessRequest.objects.create(
+            vet=request.user,
+            pet=pet,
+            access_level=level,
+            message=request.POST.get('message', ''),
+        )
+        messages.success(request, 'Заявка отправлена. Ожидайте подтверждения владельца.')
+
+    return redirect('vet_patient_search')
+
+
+@login_required
+def vet_requests_list(request):
+    """Список заявок текущего ветеринара и выданных доступов."""
+    if request.user.role != 'vet':
+        return redirect('home')
+
+    requests_qs = VetAccessRequest.objects.filter(vet=request.user).select_related('pet', 'pet__owner')
+    accesses_qs = VetAccess.objects.filter(vet=request.user).select_related('pet', 'pet__owner')
+
+    return render(request, 'vet/requests_list.html', {
+        'requests': requests_qs,
+        'accesses': accesses_qs,
+    })
+
+
+@login_required
+def vet_access_respond(request, pk, action):
+    """POST — владелец одобряет/отклоняет заявку ветеринара."""
+    if request.method != 'POST':
+        return redirect('home')
+
+    req = get_object_or_404(VetAccessRequest, pk=pk)
+    if req.pet.owner != request.user:
+        messages.error(request, 'Недостаточно прав.')
+        return redirect('home')
+
+    if action == 'approve':
+        req.status = VetAccessRequest.Status.APPROVED
+        req.responded_at = timezone.now()
+        req.save(update_fields=['status', 'responded_at'])
+
+        VetAccess.objects.update_or_create(
+            vet=req.vet, pet=req.pet,
+            defaults={'access_level': req.access_level},
+        )
+        messages.success(request, f'Доступ для {req.vet.get_full_name() or req.vet.username} одобрен.')
+    elif action == 'reject':
+        req.status = VetAccessRequest.Status.REJECTED
+        req.responded_at = timezone.now()
+        req.save(update_fields=['status', 'responded_at'])
+        messages.success(request, 'Заявка отклонена.')
+
+    return redirect(reverse('home') + '#notifications')
+
+
+@login_required
+def reminder_update_status(request, pk):
+    """POST — быстрое обновление статуса прошедшего напоминания из уведомлений."""
+    if request.method != 'POST':
+        return redirect('home')
+    r = get_object_or_404(Reminder, pk=pk)
+    if not r.pet.can_edit(request.user):
+        messages.error(request, 'Нет доступа.')
+        return redirect('home')
+
+    new_status = request.POST.get('status', 'completed')
+    if new_status in dict(Reminder.Status.choices):
+        r.status = new_status
+        r.save(update_fields=['status'])
+        messages.success(request, 'Статус напоминания обновлён.')
+    return redirect(reverse('home') + '#notifications')

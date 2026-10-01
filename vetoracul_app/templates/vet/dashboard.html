@@ -3,8 +3,16 @@
 
 {% block content %}
 <div class="dashboard-header">
-    <h1>Кабинет врача</h1>
-    <p class="dashboard-subtitle">Добро пожаловать, {{ user.get_full_name|default:user.username }}</p>
+    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+            <h1>Кабинет врача</h1>
+            <p class="dashboard-subtitle">Добро пожаловать, {{ user.get_full_name|default:user.username }}</p>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <a href="{% url 'vet_patient_search' %}" class="btn btn-primary">🔍 Поиск пациента</a>
+            <a href="{% url 'vet_requests_list' %}" class="btn btn-secondary">📩 Мои заявки</a>
+        </div>
+    </div>
 </div>
 
 <div class="stats-grid">

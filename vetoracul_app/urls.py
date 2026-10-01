@@ -81,4 +81,15 @@ urlpatterns = [
     path('profile/update/', views.profile_update, name='profile_update'),
     path('profile/photo/delete/', views.profile_photo_delete, name='profile_photo_delete'),
     path('profile/notifications/', views.notification_settings_update, name='notification_settings_update'),
+    
+        # Ветеринар: поиск пациента и заявки
+    path('vet/search/', views.vet_patient_search, name='vet_patient_search'),
+    path('vet/pet/<int:pet_pk>/request/', views.vet_request_access, name='vet_request_access'),
+    path('vet/requests/', views.vet_requests_list, name='vet_requests_list'),
+
+    # Владелец: ответ на заявку
+    path('vet-access/<int:pk>/<str:action>/', views.vet_access_respond, name='vet_access_respond'),
+
+    # Обновление статуса прошедшего напоминания из уведомлений
+    path('reminder/<int:pk>/update-status/', views.reminder_update_status, name='reminder_update_status'),
 ]

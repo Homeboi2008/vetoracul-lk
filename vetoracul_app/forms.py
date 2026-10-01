@@ -19,15 +19,15 @@ def apply_input_classes(fields, select_fields=()):
 # Пользовательские формы аутентификации
 # =========================================================
 class CustomUserCreationForm(UserCreationForm):
-    """Форма регистрации обычного пользователя. Роль всегда 'user'."""
     first_name = forms.CharField(max_length=50, required=True, label='Имя')
     last_name = forms.CharField(max_length=50, required=True, label='Фамилия')
+    middle_name = forms.CharField(max_length=50, required=False, label='Отчество')
     email = forms.EmailField(required=True, label='Email')
     phone = forms.CharField(max_length=20, required=True, label='Телефон')
 
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name', 'phone')
+        fields = ('email', 'first_name', 'last_name', 'middle_name', 'phone')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,6 +36,7 @@ class CustomUserCreationForm(UserCreationForm):
         apply_input_classes(self.fields)
         self.fields['first_name'].widget.attrs['placeholder'] = 'Введите имя'
         self.fields['last_name'].widget.attrs['placeholder'] = 'Введите фамилию'
+        self.fields['middle_name'].widget.attrs['placeholder'] = 'Введите отчество (если есть)'
         self.fields['email'].widget.attrs['placeholder'] = 'example@mail.ru'
         self.fields['phone'].widget.attrs['placeholder'] = '+7 (___) ___-__-__'
         self.fields['password1'].widget.attrs['placeholder'] = 'Минимум 8 символов'
@@ -69,13 +70,14 @@ class VetRegistrationForm(UserCreationForm):
     phone = forms.CharField(max_length=20, required=True, label='Телефон')
     first_name = forms.CharField(max_length=50, required=True, label='Имя')
     last_name = forms.CharField(max_length=50, required=True, label='Фамилия')
+    middle_name = forms.CharField(max_length=50, required=False, label='Отчество')
     city = forms.CharField(max_length=100, required=False, label='Город')
-    specialization = forms.CharField(max_length=100, required=True, label='Специализация')
-    education = forms.CharField(max_length=200, required=True, label='Образование (вуз)')
-    grad_year = forms.IntegerField(required=True, label='Год окончания', min_value=1950, max_value=2030)
-    license_number = forms.CharField(max_length=50, required=True, label='Номер лицензии')
-    experience = forms.IntegerField(required=True, label='Стаж (лет)', min_value=0, max_value=60)
-    clinic = forms.CharField(max_length=200, required=True, label='Место работы')
+    # specialization = forms.CharField(max_length=100, required=True, label='Специализация')
+    # education = forms.CharField(max_length=200, required=True, label='Образование (вуз)')
+    # grad_year = forms.IntegerField(required=True, label='Год окончания', min_value=1950, max_value=2030)
+    # license_number = forms.CharField(max_length=50, required=True, label='Номер лицензии')
+    # experience = forms.IntegerField(required=True, label='Стаж (лет)', min_value=0, max_value=60)
+    # clinic = forms.CharField(max_length=200, required=True, label='Место работы')
 
     class Meta:
         model = User
@@ -93,6 +95,7 @@ class VetRegistrationForm(UserCreationForm):
         user.phone = self.cleaned_data['phone']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
+        user.middle_name = self.cleaned_data.get('middle_name', '')
         user.city = self.cleaned_data.get('city', '')
         if commit:
             user.save()
@@ -243,26 +246,34 @@ class DiagnosisForm(forms.ModelForm):
 
     class Meta:
         model = Diagnosis
-        fields = ('diagnosis_text', 'treatment', 'date', 'status', 'vet')
+        fields = ('diagnosis_text', 'treatment', 'date', 'status')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Установим текущее состояние питомца как начальное значение
+        # Текущее состояние питомца как начальное значение
         if self.instance and self.instance.pk and self.instance.pet_id:
             self.fields['new_health_status'].initial = self.instance.pet.health_status
-        elif 'initial' in kwargs and kwargs['initial']:
-            pass
 
-        apply_input_classes(self.fields, select_fields={'status', 'vet'})
-
-        if self.user and self.user.role != 'vet':
-            self.fields.pop('vet', None)
-        else:
-            self.fields['vet'].queryset = User.objects.filter(role='vet')
-            self.fields['vet'].required = False
+        apply_input_classes(self.fields, select_fields={'status'})
         self.fields['treatment'].required = False
+
+        # Ветеринар видит поле «Врач» только если редактирует чужой диагноз
+        # (в остальных случаях vet проставляется автоматически)
+        if self.user and self.user.role == 'vet' and self.instance and self.instance.pk:
+            self.fields['vet'] = forms.ModelChoiceField(
+                queryset=User.objects.filter(role='vet'),
+                required=False,
+                label='Ветеринар',
+                widget=forms.Select(attrs={'class': 'form-input form-select'}),
+            )
+            if self.instance.vet_id:
+                self.fields['vet'].initial = self.instance.vet_id
+        elif self.user and self.user.role == 'vet':
+            # Всё равно даём опцию сменить врача при создании, если нужно —
+            # но по умолчанию подставим себя в view. Поле скрыто.
+            pass
 
     def clean_date(self):
         date = self.cleaned_data.get('date')
@@ -346,7 +357,7 @@ class FolderForm(forms.ModelForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'phone', 'city', 'photo')
+        fields = ('first_name', 'last_name', 'middle_name', 'email', 'phone', 'city', 'photo')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

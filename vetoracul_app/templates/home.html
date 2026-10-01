@@ -312,14 +312,11 @@
                     <span class="logo-ic">🐾</span>
                     <span class="logo-text">ВетОракул</span>
                 </div>
-                <div class="search">
-                    <input type="text" placeholder="Поиск">
-                </div>
                 <div class="user-actions">
                     <div class="notifications-wrapper">
                         <button class="notification-btn" onclick="toggleNotifications()" title="Уведомления">
                             🔔
-                            <span class="notification-badge">{{ upcoming_reminders|length }}</span>
+                            <span class="notification-badge">{{ notifications_count }}</span>
                         </button>
                         <div class="notifications-panel" id="notificationsPanel">
                             <div class="notifications-panel__header">
@@ -327,25 +324,74 @@
                                 <button class="notifications-panel__clear" onclick="stubAction('Очистка уведомлений')">Очистить</button>
                             </div>
                             <div class="notifications-panel__divider"></div>
-                            {% if upcoming_reminders %}
-                                <div class="notifications-list">
-                                    {% for r in upcoming_reminders %}
-                                        <div class="user-detail-row" style="padding:10px 0;">
-                                            <span class="row-icon">⏰</span>
-                                            <div>
-                                                <div style="font-weight:500;">{{ r.title }}</div>
-                                                <div style="font-size:0.8rem;color:var(--color-text-secondary);">
-                                                    {{ r.date }} • {{ r.pet.name }}
-                                                </div>
+                            {% if pending_vet_requests or past_pending_reminders %}
+                                <div class="notifications-list" style="max-height:60vh;overflow-y:auto;">
+
+                                    {# === Заявки ветеринаров === #}
+                                    {% for r in pending_vet_requests %}
+                                        <div style="padding:12px 4px;border-bottom:1px solid #e0d6f0;">
+                                            <div style="font-size:0.75rem;color:#6b46c1;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                                                🩺 Запрос доступа от ветеринара
+                                            </div>
+                                            <div style="font-size:0.9rem;line-height:1.4;margin-bottom:6px;">
+                                                <strong>{{ r.vet.get_full_name|default:r.vet.username }}</strong>
+                                                запрашивает доступ к питомцу
+                                                <strong>{{ r.pet.name }}</strong>
+                                                — уровень: <em>{{ r.get_access_level_display }}</em>
+                                            </div>
+                                            {% if r.message %}
+                                                <div style="font-size:0.8rem;color:#6b5b8a;margin-bottom:6px;">«{{ r.message }}»</div>
+                                            {% endif %}
+                                            <div style="display:flex;gap:6px;">
+                                                <form method="post" action="{% url 'vet_access_respond' r.pk 'approve' %}" style="flex:1;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-primary" style="width:100%;padding:6px 10px;font-size:0.8rem;">Одобрить</button>
+                                                </form>
+                                                <form method="post" action="{% url 'vet_access_respond' r.pk 'reject' %}" style="flex:1;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-outline" style="width:100%;padding:6px 10px;font-size:0.8rem;color:#dc2626;border-color:#dc2626;">Отклонить</button>
+                                                </form>
                                             </div>
                                         </div>
                                     {% endfor %}
+
+                                    {# === Прошедшие напоминания === #}
+                                    {% for r in past_pending_reminders %}
+                                        <div style="padding:12px 4px;border-bottom:1px solid #e0d6f0;">
+                                            <div style="font-size:0.75rem;color:#b45309;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                                                ⏰ Прошедшее событие
+                                            </div>
+                                            <div style="font-size:0.9rem;line-height:1.4;margin-bottom:6px;">
+                                                <strong>{{ r.title }}</strong> — у {{ r.pet.name }}
+                                                ({{ r.date|date:"d.m.Y" }}).
+                                                Обновите статус:
+                                            </div>
+                                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                                <form method="post" action="{% url 'reminder_update_status' r.pk %}" style="flex:1;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="completed">
+                                                    <button type="submit" class="btn btn-primary" style="width:100%;padding:6px 10px;font-size:0.8rem;">✅ Выполнено</button>
+                                                </form>
+                                                <form method="post" action="{% url 'reminder_update_status' r.pk %}" style="flex:1;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="missed">
+                                                    <button type="submit" class="btn btn-secondary" style="width:100%;padding:6px 10px;font-size:0.8rem;">⛔ Пропущено</button>
+                                                </form>
+                                                <form method="post" action="{% url 'reminder_update_status' r.pk %}" style="flex:1;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="cancelled">
+                                                    <button type="submit" class="btn btn-outline" style="width:100%;padding:6px 10px;font-size:0.8rem;">✖ Отменено</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+
                                 </div>
                             {% else %}
                                 <div class="notifications-empty">
                                     <div class="empty-icon">🔔</div>
                                     <p class="empty-text">Уведомлений нет</p>
-                                    <p class="empty-subtext">Здесь будут отображаться напоминания о приемах</p>
+                                    <p class="empty-subtext">Здесь появятся запросы от ветеринаров и напоминания о событиях</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -431,7 +477,7 @@
             </aside>
 
             <main class="content">
-                {% if messages %}
+                {% comment %} {% if messages %}
                     {% for message in messages %}
                         <div class="alert alert-{{ message.tags }}" style="padding:12px 20px;border-radius:12px;margin-bottom:16px;
                             {% if message.tags == 'success' %}background:#d1fae5;color:#065f46;
@@ -440,7 +486,7 @@
                             {{ message }}
                         </div>
                     {% endfor %}
-                {% endif %}
+                {% endif %} {% endcomment %}
 
                 <!-- ============ ПАНЕЛЬ ============ -->
                 <section class="page active" id="dashboard">
@@ -612,7 +658,7 @@
                                 </div>
 
                                 <div class="pet-card__footer">
-                                    <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-secondary">✏️ Изменить</a>
+                                    {% if can_edit %}<a href="{% url 'pet_edit' pet.pk %}" class="btn btn-secondary">✏️ Изменить</a>{% endif %}
                                     <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-primary">📅 Открыть</a>
                                 </div>
                             </div>
@@ -822,6 +868,10 @@
                                         <div class="form-group">
                                             <label class="form-label">Фамилия</label>
                                             <input type="text" name="last_name" class="form-input" value="{{ user.last_name }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Отчество</label>
+                                            <input type="text" name="middle_name" class="form-input" value="{{ user.middle_name }}">
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label">Email</label>
@@ -1755,6 +1805,12 @@
         }
         if (window.location.hash === '#settings') {
             switchPage('settings');
+        }
+        if (window.location.hash === '#notifications') {
+            // Открыть панель уведомлений
+            document.getElementById('notificationsPanel').classList.add('active');
+            // Убрать хэш
+            history.replaceState({}, '', window.location.pathname);
         }
         // ===== НАПОМИНАНИЯ: МОДАЛКА =====
         window.openReminderModal = function(reminderId) {

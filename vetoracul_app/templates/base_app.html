@@ -19,9 +19,6 @@
                     <span class="logo-ic">🐾</span>
                     <span class="logo-text">ВетОракул</span>
                 </a>
-                <div class="search">
-                    <input type="text" placeholder="Поиск">
-                </div>
                 <div class="user-actions">
                     <div class="notifications-wrapper">
                         <button class="notification-btn" onclick="toggleNotifications()" title="Уведомления">
@@ -134,7 +131,7 @@
             </aside>
 
             <main class="content">
-                {% if messages %}
+                {% comment %} {% if messages %}
                     {% for message in messages %}
                         <div class="alert alert-{{ message.tags }}" style="padding:12px 20px;border-radius:12px;margin-bottom:16px;
                             {% if message.tags == 'success' %}background:#d1fae5;color:#065f46;
@@ -143,7 +140,7 @@
                             {{ message }}
                         </div>
                     {% endfor %}
-                {% endif %}
+                {% endif %} {% endcomment %}
                 {% block content %}{% endblock %}
             </main>
         </div>

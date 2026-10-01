@@ -1,0 +1,114 @@
+{% extends 'base_app.html' %}
+{% block title %}Поиск пациента — ВетОракул{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🔍 Поиск пациента</h1>
+        <p class="page-subtitle">Найдите владельца по email и запросите доступ к питомцу</p>
+    </div>
+</div>
+
+<div class="settings-card" style="max-width:900px;margin-bottom:24px;">
+    <form method="get" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:260px;margin:0;">
+            <label class="form-label">Email владельца</label>
+            <input type="email" name="email" class="form-input" value="{{ email_query }}" placeholder="owner@example.com" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Найти</button>
+    </form>
+</div>
+
+{% if email_query and not found_user %}
+    <div class="docs-empty">
+        <h3 class="empty-title">Пользователь не найден</h3>
+        <p class="empty-text">Проверьте email или попросите владельца зарегистрироваться.</p>
+    </div>
+{% endif %}
+
+{% if found_user %}
+    <div class="settings-card" style="max-width:900px;margin-bottom:24px;">
+        <div style="display:flex;gap:16px;align-items:center;">
+            <div class="profile-avatar" style="width:56px;height:56px;font-size:1.2rem;overflow:hidden;padding:0;">
+                {% if found_user.photo %}
+                    <img src="{{ found_user.photo.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                {% else %}
+                    {{ found_user.get_full_name|default:found_user.username|slice:":2"|upper }}
+                {% endif %}
+            </div>
+            <div>
+                <h3 class="profile-name" style="margin:0;">{{ found_user.get_full_name|default:found_user.username }}</h3>
+                <p class="profile-role" style="margin:4px 0 0 0;">{{ found_user.email }}</p>
+            </div>
+        </div>
+    </div>
+
+    {% if pets %}
+        <h2 class="section-heading">Питомцы</h2>
+        <div class="pets-grid">
+            {% for pet in pets %}
+                <div class="pet-card">
+                    <div class="pet-card__header">
+                        <div class="pet-card__avatar">
+                            {% if pet.photo %}
+                                <img src="{{ pet.photo.url }}" alt="{{ pet.name }}">
+                            {% else %}
+                                <div class="pet-card__avatar-placeholder"><span>{{ pet.name|slice:":1"|upper }}</span></div>
+                            {% endif %}
+                        </div>
+                        <div class="pet-card__info">
+                            <h3 class="pet-card__name">{{ pet.name }}</h3>
+                            <p class="pet-card__breed">
+                                {{ pet.animal_type }}{% if pet.breed %}, {{ pet.breed }}{% endif %}
+                                • {% if pet.gender == 'M' %}♂{% else %}♀{% endif %}
+                                {% if pet.age %} • {{ pet.age }} лет{% endif %}
+                            </p>
+                        </div>
+                        <span class="pet-card__status {{ pet.health_status_class }}">
+                            {{ pet.get_health_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="pet-card__body">
+                        {% if existing_access|default_if_none:""|dictsort:pet.pk %}
+                        {% endif %}
+                        {% if pet.pk in existing_access %}
+                            <p class="text-muted" style="font-size:0.9rem;">
+                                ✅ У вас уже есть доступ:
+                                <strong>
+                                    {% if existing_access|default:"" %}{{ existing_access|dictsort:0|first }}{% endif %}
+                                </strong>
+                            </p>
+                        {% elif pet.pk in pending_requests %}
+                            <p class="text-muted" style="font-size:0.9rem;">
+                                ⏳ Заявка отправлена, ожидает подтверждения.
+                            </p>
+                        {% else %}
+                            <form method="post" action="{% url 'vet_request_access' pet.pk %}">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label class="form-label">Запросить доступ</label>
+                                    <select name="access_level" class="form-input">
+                                        <option value="view">Просмотр</option>
+                                        <option value="edit">Изменение</option>
+                                        <option value="add">Добавление записей</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Сообщение владельцу (опционально)</label>
+                                    <input type="text" name="message" class="form-input" placeholder="Например: наблюдаю Барсика">
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width:100%;">Отправить заявку</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="docs-empty">
+            <h3 class="empty-title">У пользователя нет питомцев</h3>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

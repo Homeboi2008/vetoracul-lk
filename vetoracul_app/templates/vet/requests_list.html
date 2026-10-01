@@ -1,0 +1,47 @@
+{% extends 'base_app.html' %}
+{% block title %}Мои заявки — ВетОракул{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📩 Мои заявки на доступ</h1>
+    <a href="{% url 'vet_patient_search' %}" class="btn btn-primary">+ Новая заявка</a>
+</div>
+
+<h2 class="section-heading">Ожидают ответа</h2>
+{% for r in requests %}
+    {% if r.status == 'pending' %}
+        <div class="reminder-card" style="margin-bottom:10px;">
+            <div class="reminder-info">
+                <h4 class="reminder-title">{{ r.pet.name }} — {{ r.pet.owner.get_full_name|default:r.pet.owner.username }}</h4>
+                <p class="reminder-meta">Уровень: {{ r.get_access_level_display }} • {{ r.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+            <span class="reminder-status reminder-status--upcoming">Ожидает</span>
+        </div>
+    {% endif %}
+{% empty %}
+    <p class="text-muted">Заявок нет.</p>
+{% endfor %}
+
+<h2 class="section-heading" style="margin-top:28px;">Одобренные доступы</h2>
+<div class="pets-grid">
+    {% for a in accesses %}
+        <div class="pet-card">
+            <div class="pet-card__header">
+                <div class="pet-card__avatar">
+                    {% if a.pet.photo %}<img src="{{ a.pet.photo.url }}">{% else %}<div class="pet-card__avatar-placeholder"><span>{{ a.pet.name|slice:":1"|upper }}</span></div>{% endif %}
+                </div>
+                <div class="pet-card__info">
+                    <h3 class="pet-card__name">{{ a.pet.name }}</h3>
+                    <p class="pet-card__breed">{{ a.pet.owner.get_full_name|default:a.pet.owner.username }}</p>
+                </div>
+                <span class="pet-tag">{{ a.get_access_level_display }}</span>
+            </div>
+            <div class="pet-card__footer">
+                <a href="{% url 'vet_patient_card' a.pet.pk %}" class="btn btn-primary">Открыть карточку</a>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">Пока нет одобренных доступов.</p>
+    {% endfor %}
+</div>
+{% endblock %}

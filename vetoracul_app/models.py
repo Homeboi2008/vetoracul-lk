@@ -29,6 +29,12 @@ class User(AbstractUser):
         verbose_name='user permissions',
         help_text='Specific permissions for this user.',
     )
+    middle_name = models.CharField(
+        max_length=150,
+        null=True,
+        blank=True,
+        verbose_name='Отчество'
+    )
 
     role = models.CharField(
         max_length=10,
@@ -62,6 +68,12 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    def get_full_name(self):
+        """ФИО: Фамилия Имя Отчество."""
+        parts = [self.last_name, self.first_name, self.middle_name]
+        full = ' '.join(p for p in parts if p)
+        return full.strip() or self.username
 
     def __str__(self):
         return self.get_full_name() or self.username
@@ -164,23 +176,38 @@ class Pet(models.Model):
     def can_view(self, user):
         if not user.is_authenticated:
             return False
-        if user.role == 'vet':
+        if self.is_owner(user) or self.is_co_owner(user):
             return True
-        return self.is_owner(user) or self.is_co_owner(user)
+        if user.role == 'vet':
+            return self.vet_accesses.filter(vet=user).exists()
+        return False
 
     def can_edit(self, user):
         if not user.is_authenticated:
             return False
-        if user.role == 'vet':
-            return True
         if self.is_owner(user):
             return True
-        return self.co_owner_links.filter(
-            user=user, access_level=PetCoOwner.AccessLevel.WRITE
-        ).exists()
+        if self.co_owner_links.filter(user=user, access_level=PetCoOwner.AccessLevel.WRITE).exists():
+            return True
+        if user.role == 'vet':
+            return self.vet_accesses.filter(
+                vet=user, access_level__in=('edit', 'add')
+            ).exists()
+        return False
+
+    def can_add(self, user):
+        """Может ли добавлять диагнозы/документы/напоминания."""
+        if not user.is_authenticated:
+            return False
+        if self.is_owner(user):
+            return True
+        if self.co_owner_links.filter(user=user, access_level=PetCoOwner.AccessLevel.WRITE).exists():
+            return True
+        if user.role == 'vet':
+            return self.vet_accesses.filter(vet=user, access_level='add').exists()
+        return False
 
     def can_delete(self, user):
-        """Удалять может только владелец."""
         return self.is_owner(user)
     
     @property
@@ -588,3 +615,89 @@ class PetCoOwner(models.Model):
 
     def __str__(self):
         return f'{self.user.get_full_name() or self.user.username} → {self.pet.name} ({self.get_access_level_display()})'
+    
+class VetAccessRequest(models.Model):
+    """Заявка ветеринара на доступ к питомцу."""
+    class AccessLevel(models.TextChoices):
+        VIEW = 'view', 'Просмотр'
+        EDIT = 'edit', 'Изменение'
+        ADD = 'add', 'Добавление записей'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Ожидает'
+        APPROVED = 'approved', 'Одобрена'
+        REJECTED = 'rejected', 'Отклонена'
+
+    vet = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='vet_access_requests',
+        limit_choices_to={'role': 'vet'},
+        verbose_name='Ветеринар'
+    )
+    pet = models.ForeignKey(
+        Pet, on_delete=models.CASCADE,
+        related_name='vet_access_requests',
+        verbose_name='Питомец'
+    )
+    access_level = models.CharField(
+        max_length=10,
+        choices=AccessLevel.choices,
+        default=AccessLevel.VIEW,
+        verbose_name='Уровень доступа'
+    )
+    message = models.TextField(
+        blank=True,
+        verbose_name='Сообщение от ветеринара'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name='Статус'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    responded_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата ответа')
+
+    class Meta:
+        verbose_name = 'Заявка на доступ'
+        verbose_name_plural = 'Заявки на доступ'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.vet} → {self.pet.name} ({self.get_access_level_display()})'
+
+
+class VetAccess(models.Model):
+    """Одобренный доступ ветеринара к питомцу."""
+    class AccessLevel(models.TextChoices):
+        VIEW = 'view', 'Просмотр'
+        EDIT = 'edit', 'Изменение'
+        ADD = 'add', 'Добавление записей'
+
+    vet = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='vet_accesses',
+        limit_choices_to={'role': 'vet'},
+        verbose_name='Ветеринар'
+    )
+    pet = models.ForeignKey(
+        Pet, on_delete=models.CASCADE,
+        related_name='vet_accesses',
+        verbose_name='Питомец'
+    )
+    access_level = models.CharField(
+        max_length=10,
+        choices=AccessLevel.choices,
+        default=AccessLevel.VIEW,
+        verbose_name='Уровень доступа'
+    )
+    granted_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата выдачи')
+
+    class Meta:
+        verbose_name = 'Доступ ветеринара'
+        verbose_name_plural = 'Доступы ветеринаров'
+        unique_together = ('vet', 'pet')
+        ordering = ['-granted_at']
+
+    def __str__(self):
+        return f'{self.vet} → {self.pet.name} ({self.get_access_level_display()})'

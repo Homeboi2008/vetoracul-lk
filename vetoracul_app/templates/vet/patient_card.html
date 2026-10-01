@@ -1,87 +1,213 @@
 {% extends 'base_app.html' %}
+{% load static %}
+
 {% block title %}{{ pet.name }} — Карточка пациента{% endblock %}
 
 {% block content %}
 <div class="pet-view">
+
+    <!-- ===== ШАПКА КАРТОЧКИ ===== -->
     <div class="pet-view-header">
         <div class="pet-view-photo">
-            <div class="pet-view-photo-placeholder">
-                <span class="pet-view-photo-letter">{{ pet.name|slice:":1"|upper }}</span>
-            </div>
+            {% if pet.photo %}
+                <img src="{{ pet.photo.url }}" alt="{{ pet.name }}" class="pet-view-photo-img">
+            {% else %}
+                <div class="pet-view-photo-placeholder" style="display:flex;">
+                    <span class="pet-view-photo-letter">{{ pet.name|slice:":1"|upper }}</span>
+                </div>
+            {% endif %}
         </div>
+
         <div class="pet-view-info">
             <h1 class="pet-view-name">{{ pet.name }}</h1>
             <div class="pet-view-tags">
                 <span class="pet-tag">{{ pet.animal_type }}</span>
-                <span class="pet-tag">{{ pet.get_gender_display }}</span>
+                {% if pet.breed %}<span class="pet-tag">{{ pet.breed }}</span>{% endif %}
+                {% if pet.gender == 'M' %}
+                    <span class="pet-tag pet-tag--male">Мальчик</span>
+                {% else %}
+                    <span class="pet-tag pet-tag--female">Девочка</span>
+                {% endif %}
+                <span class="pet-tag {{ pet.health_status_class }}">{{ pet.get_health_status_display }}</span>
+                {% if access %}
+                    <span class="pet-tag" style="background:#ede9fe;color:#5b21b6;border-color:#c4b5fd;">
+                        🔑 {{ access_level_display }}
+                    </span>
+                {% endif %}
             </div>
             <div class="pet-view-meta">
-                {% if pet.age %}<div class="pet-meta-item">🎂 {{ pet.age }} лет</div>{% endif %}
-                <div class="pet-meta-item">⚖️ {{ pet.weight }} кг</div>
+                {% if pet.birth_date %}
+                    <div class="pet-meta-item">
+                        <span class="pet-meta-icon">🎂</span>
+                        <span>{{ pet.birth_date|date:"d.m.Y" }}{% if pet.age %} ({{ pet.age }} лет){% endif %}</span>
+                    </div>
+                {% endif %}
+                <div class="pet-meta-item">
+                    <span class="pet-meta-icon">⚖️</span>
+                    <span>{{ pet.weight }} кг</span>
+                </div>
             </div>
         </div>
-        <div>
-            <a href="{% url 'vet_medical_record_add' pet.pk %}" class="btn btn-primary">+ Медицинская запись</a>
+
+        <div class="pet-view-actions-inline">
+            {% if can_add %}
+                <a href="{% url 'vet_medical_record_add' pet.pk %}" class="btn btn-primary">+ Медицинская запись</a>
+            {% endif %}
         </div>
     </div>
 
+    <!-- ===== ВЛАДЕЛЕЦ ===== -->
     <div class="pet-view-section">
         <h2 class="pet-view-section-title">Владелец</h2>
-        <div class="info-row"><span class="info-label">ФИО:</span><span class="info-value">{{ pet.owner.get_full_name|default:pet.owner.username }}</span></div>
-        <div class="info-row"><span class="info-label">Телефон:</span><span class="info-value">{{ pet.owner.phone|default:"—" }}</span></div>
-        <div class="info-row"><span class="info-label">Email:</span><span class="info-value">{{ pet.owner.email }}</span></div>
+        <div class="owner-info-card">
+            <div class="owner-info-row">
+                <span class="owner-info-label">ФИО:</span>
+                <span class="owner-info-value">{{ pet.owner.get_full_name|default:pet.owner.username }}</span>
+            </div>
+            <div class="owner-info-row">
+                <span class="owner-info-label">Телефон:</span>
+                <a href="tel:{{ pet.owner.phone }}" class="owner-info-link">{{ pet.owner.phone|default:"—" }}</a>
+            </div>
+            <div class="owner-info-row">
+                <span class="owner-info-label">Email:</span>
+                <a href="mailto:{{ pet.owner.email }}" class="owner-info-link">{{ pet.owner.email }}</a>
+            </div>
+            {% if pet.co_owner_links.all %}
+                <div class="owner-info-row">
+                    <span class="owner-info-label">Совладельцы:</span>
+                    <span class="owner-info-value">
+                        {% for link in pet.co_owner_links.all %}
+                            {{ link.user.get_full_name|default:link.user.username }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
+    <!-- ===== ДИАГНОЗЫ ===== -->
     <div class="pet-view-section">
-        <h2 class="pet-view-section-title">Диагнозы</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 class="pet-view-section-title" style="margin:0;border:none;padding:0;">🩺 Диагнозы</h2>
+            {% if can_add %}
+                <a href="{% url 'vet_medical_record_add' pet.pk %}" class="btn btn-sm btn-primary">+ Добавить</a>
+            {% endif %}
+        </div>
         {% for d in diagnoses %}
             <div class="timeline-content" style="margin-bottom:12px;">
-                <strong>{{ d.get_status_display }}</strong>
-                <span style="color:var(--color-text-secondary);font-size:0.85rem;">— {{ d.date }}</span>
-                <p style="margin-top:8px;">{{ d.diagnosis_text }}</p>
-                {% if d.vet %}<small>Врач: {{ d.vet.get_full_name|default:d.vet.username }}</small>{% endif %}
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div>
+                        <strong>{{ d.get_status_display }}</strong>
+                        <span style="color:var(--color-text-secondary);font-size:0.85rem;"> — {{ d.date|date:"d.m.Y" }}</span>
+                    </div>
+                    {% if can_edit %}
+                        <div style="display:flex;gap:6px;">
+                            <a href="{% url 'diagnosis_edit' d.pk %}" class="btn btn-sm btn-outline">Изменить</a>
+                            <a href="{% url 'diagnosis_delete' d.pk %}" class="btn btn-sm btn-outline">Удалить</a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <p style="margin:10px 0 0 0;"><strong>Диагноз:</strong> {{ d.diagnosis_text }}</p>
+
+                {% if d.treatment %}
+                    <div style="margin-top:10px;padding:10px 14px;background:#f5f0ff;border-radius:10px;border-left:3px solid var(--color-accent);">
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--color-accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                            💊 Прописанное лечение
+                        </div>
+                        <div style="font-size:0.9rem;line-height:1.5;">{{ d.treatment|linebreaksbr }}</div>
+                    </div>
+                {% endif %}
+
+                {% if d.vet %}
+                    <small style="color:var(--color-text-secondary);display:block;margin-top:8px;">
+                        Врач: {{ d.vet.get_full_name|default:d.vet.username }}
+                    </small>
+                {% endif %}
             </div>
         {% empty %}
-            <p class="text-muted">Диагнозов нет.</p>
+            <p class="text-muted">Диагнозов пока нет.</p>
         {% endfor %}
     </div>
 
+    <!-- ===== ДОКУМЕНТЫ ===== -->
     <div class="pet-view-section">
-        <h2 class="pet-view-section-title">Документы</h2>
-        {% for doc in documents %}
-            <div class="document-item" style="margin-bottom:12px;">
-                <div class="document-info">
-                    <div class="document-icon">📄</div>
-                    <div class="document-details">
-                        <div class="document-name">{{ doc.title|default:doc.file.name }}</div>
-                        <div class="document-meta">{{ doc.date }}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 class="pet-view-section-title" style="margin:0;border:none;padding:0;">📄 Документы</h2>
+            {% if can_add %}
+                <a href="{% url 'document_add' pet.pk %}" class="btn btn-sm btn-primary">+ Загрузить</a>
+            {% endif %}
+        </div>
+        <div class="documents-list">
+            {% for doc in documents %}
+                <div class="document-item">
+                    <div class="document-info">
+                        <div class="document-icon document-icon--pdf">📄</div>
+                        <div class="document-details">
+                            <div class="document-name">{{ doc.title|default:doc.file.name }}</div>
+                            <div class="document-meta">{{ doc.date|date:"d.m.Y" }} • {{ doc.folder.name|default:"Без папки" }}</div>
+                        </div>
+                    </div>
+                    <div class="document-actions">
+                        <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline" target="_blank">Просмотр</a>
+                        <a href="{{ doc.file.url }}" class="btn btn-sm btn-primary" download>Скачать</a>
+                        {% if can_edit %}
+                            <form method="post" action="{% url 'document_soft_delete' doc.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline" style="color:#dc2626;border-color:#dc2626;"
+                                        onclick="return confirm('Переместить документ в корзину?')">Удалить</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="document-actions">
-                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-primary" target="_blank">Скачать</a>
-                </div>
-            </div>
-        {% empty %}
-            <p class="text-muted">Документов нет.</p>
-        {% endfor %}
+            {% empty %}
+                <p class="text-muted">Документов нет.</p>
+            {% endfor %}
+        </div>
     </div>
 
+    <!-- ===== НАПОМИНАНИЯ ===== -->
     <div class="pet-view-section">
-        <h2 class="pet-view-section-title">Напоминания</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 class="pet-view-section-title" style="margin:0;border:none;padding:0;">⏰ Напоминания</h2>
+            {% if can_add %}
+                <a href="{% url 'reminder_add' pet.pk %}" class="btn btn-sm btn-primary">+ Добавить</a>
+            {% endif %}
+        </div>
         {% for r in reminders %}
-            <div class="reminder-card" style="margin-bottom:12px;">
+            <div class="reminder-card" style="margin-bottom:10px;">
                 <div class="reminder-date-box">
                     <div class="reminder-date-day">{{ r.date.day }}</div>
                     <div class="reminder-date-month">{{ r.date|date:"M" }}</div>
                 </div>
                 <div class="reminder-info">
                     <h4 class="reminder-title">{{ r.title }}</h4>
-                    <p class="reminder-meta">{{ r.get_reminder_type_display }} • {{ r.get_status_display }}</p>
+                    <p class="reminder-meta">
+                        {{ r.get_reminder_type_display }} • {{ r.get_status_display }}
+                        {% if r.time %} • {{ r.time|time:"H:i" }}{% endif %}
+                    </p>
                 </div>
+                {% if can_edit %}
+                    <div style="display:flex;gap:6px;">
+                        <a href="{% url 'reminder_edit' r.pk %}" class="btn btn-sm btn-outline">Изменить</a>
+                        <a href="{% url 'reminder_delete' r.pk %}" class="btn btn-sm btn-outline">Удалить</a>
+                    </div>
+                {% endif %}
             </div>
         {% empty %}
             <p class="text-muted">Напоминаний нет.</p>
         {% endfor %}
     </div>
+
+    <!-- ===== ЗАМЕТКИ ===== -->
+    {% if pet.notes %}
+        <div class="pet-view-section">
+            <h2 class="pet-view-section-title">📝 Особые заметки</h2>
+            <div class="pet-view-text">
+                <p>{{ pet.notes|linebreaksbr }}</p>
+            </div>
+        </div>
+    {% endif %}
+
 </div>
 {% endblock %}
