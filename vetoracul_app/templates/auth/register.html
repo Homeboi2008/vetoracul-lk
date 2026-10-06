@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+    <link rel="stylesheet" href="{% static 'css/messages.css' %}">
 </head>
 <body>
     <div class="reg-page">
@@ -101,11 +102,17 @@
                 </div>
 
                 {% if messages %}
-                    {% for message in messages %}
-                        <div class="form-hint {% if message.tags == 'error' %}error{% else %}success{% endif %}" style="margin-bottom:12px;">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+                    <div class="toast-container">
+                        {% for message in messages %}
+                            <div class="toast-notification {{ message.tags }}" role="alert">
+                                <div class="toast-content">
+                                    <span class="toast-message">{{ message }}</span>
+                                    <button type="button" class="toast-close" aria-label="Закрыть">✕</button>
+                                </div>
+                                <div class="toast-progress"></div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
 
                 <form class="reg-form" method="post" id="registrationForm" novalidate>
@@ -326,5 +333,6 @@
             }
         });
     </script>
+    <script src={% static 'js/messages.js' %} type="text/javascript"></script>
 </body>
 </html>

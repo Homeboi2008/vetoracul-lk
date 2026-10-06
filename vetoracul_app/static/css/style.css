@@ -555,7 +555,7 @@ body {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 300px;
+  width: 400px;
   background: var(--color-card);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -2487,3 +2487,84 @@ body {
     font-size: 0.7rem; color: var(--color-text-secondary);
 }
 .pet-card .document-item .doc-action { opacity: 0.5; }
+
+/* --- Описание напоминания --- */
+.reminder-description {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    margin: 6px 0 0 0;
+    padding-left: 10px;
+    border-left: 2px solid var(--color-border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+}
+
+.reminder-card:hover .reminder-description {
+    border-left-color: var(--color-accent-soft);
+}
+
+/* Компактный вариант — для дашборда */
+.reminder-item .reminder-description {
+    font-size: 0.78rem;
+    margin-top: 4px;
+    -webkit-line-clamp: 1;
+}
+
+@media(max-width: 850px){
+  .action-buttons button{
+    font-size: 14px;
+    padding: 5px 10px !important;
+  }
+}
+
+@media(max-width: 480px){
+  .action-buttons button{
+    padding: 10px 10px !important;
+  }
+  .action-buttons{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media(max-width: 768px){
+  .docs-view-switch{
+    display: none !important;
+  }
+  .filter-select{
+    width: 100%;
+  }
+  .profile-avatar-actions{
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media(max-width: 370px){
+  .logo-ic{
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .logo-ic img{
+    width: 30px !important;
+  }
+  .logo-text{
+    font-size: 16px !important;
+  }
+}
+
+@media(max-width: 480px){
+  .user-panel{
+    right: -25px !important;
+  }
+}
+
+@media(min-width: 481px) and (max-width: 768px){
+  .user-panel{
+    width: 75vw !important;
+  }
+}

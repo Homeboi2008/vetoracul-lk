@@ -169,3 +169,25 @@ class SubscriptionAdmin(admin.ModelAdmin):
     def deactivate_selected(self, request, queryset):
         queryset.update(is_active=False, status=Subscription.Status.CANCELLED)
         self.message_user(request, f'Деактивировано {queryset.count()} подписок.')
+        
+from .models import VetProfile, VetInviteToken
+
+
+@admin.register(VetProfile)
+class VetProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'specialization', 'clinic', 'experience', 'grad_year')
+    list_filter = ('specialization', 'clinic')
+    search_fields = ('user__last_name', 'user__first_name', 'user__email', 'license_number')
+    autocomplete_fields = ('user',)
+
+
+@admin.register(VetInviteToken)
+class VetInviteTokenAdmin(admin.ModelAdmin):
+    list_display = ('token', 'note', 'created_by', 'created_at', 'expires_at', 'used_at', 'status')
+    list_filter = ('created_at', 'used_at')
+    search_fields = ('note', 'token')
+    readonly_fields = ('token', 'created_at')
+
+    def status(self, obj):
+        return obj.status_display
+    status.short_description = 'Статус'

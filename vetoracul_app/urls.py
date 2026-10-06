@@ -14,7 +14,8 @@ urlpatterns = [
 
     # Аутентификация
     path('register/', views.RegisterView.as_view(), name='register'),
-    path('register/vet/', views.VetRegisterView.as_view(), name='register_vet'),
+    path('register/vet/', views.vet_register_redirect, name='register_vet'),
+    path('register/vet/<uuid:token>/', views.vet_register_by_token, name='vet_register_by_token'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('verify-email/', views.VerifyEmailView.as_view(), name='verify_email'),
@@ -92,4 +93,10 @@ urlpatterns = [
 
     # Обновление статуса прошедшего напоминания из уведомлений
     path('reminder/<int:pk>/update-status/', views.reminder_update_status, name='reminder_update_status'),
+    path('notifications/clear/', views.clear_notifications, name='clear_notifications'),
+    
+        # Панель администратора — приглашения ветеринаров
+    path('admin-panel/vet-invites/', views.admin_vet_invites, name='admin_vet_invites'),
+    path('admin-panel/vet-invites/<int:pk>/revoke/', views.admin_vet_invites_revoke, name='admin_vet_invites_revoke'),
+    path('resend-code-by-email/', views.ResendCodeByEmailView.as_view(), name='resend_code_by_email'),
 ]

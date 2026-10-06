@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Повторная отправка кода — ВетОракул</title>
+    <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+</head>
+<body>
+<div class="reg-page">
+    <aside class="reg-branding">
+        <div class="branding-content">
+            <span class="branding-logo-icon"><img src="{% static 'img/eye1.svg' %}" style="width: 40px;"></span>
+            <h1 class="branding-title">Повторная отправка кода</h1>
+            <p class="branding-subtitle">Введите email — мы пришлём новый код подтверждения</p>
+        </div>
+    </aside>
+    <main class="reg-form-section reg-form-section--centered">
+        <div class="reg-form-wrapper">
+            <div class="reg-form-container">
+                <div class="reg-form-header">
+                    <h2 class="reg-form-title">Отправить код повторно</h2>
+                </div>
+                <form method="post" class="reg-form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-submit"><span>Отправить</span></button>
+                </form>
+                <div class="reg-form-footer" style="margin-top:16px;">
+                    <p><a href="{% url 'login' %}" class="login-link">← Ко входу</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

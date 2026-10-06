@@ -3,52 +3,419 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация ветеринара — ВетОракул</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+    <link rel="stylesheet" href="{% static 'css/messages.css' %}">
+    <style>
+        /* ===== Правая колонка — ЛИСТАЕТСЯ ===== */
+        .reg-form-section {
+            display: flex;
+            align-items: flex-start;       /* ← контент начинается сверху, не центрируется */
+            justify-content: center;
+            padding: 40px 40px 40px 24px;
+            background: var(--color-bg);
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* Кастомный скроллбар на правой колонке */
+        .reg-form-section::-webkit-scrollbar {
+            width: 8px;
+        }
+        .reg-form-section::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .reg-form-section::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+        .reg-form-section::-webkit-scrollbar-thumb:hover {
+            background: var(--color-accent);
+        }
+
+        /* Обёртка формы */
+        .reg-form-wrapper {
+            width: 100%;
+            max-width: 520px;
+            padding-bottom: 40px;
+            margin: 0 auto;
+        }
+
+        /* Контейнер формы — без собственного скролла */
+        .reg-form-container {
+            width: 100%;
+            max-height: none;              /* ← убираем ограничение высоты */
+            overflow: visible;             /* ← убираем вложенный скролл */
+            padding: 0;
+        }
+    </style>
+
 </head>
 <body>
-<div class="reg-page">
-    <aside class="reg-branding">
-        <div class="branding-content">
-            <div class="branding-logo">
-                <span class="branding-logo-icon">🐾</span>
-                <span class="branding-logo-text">ВетОракул</span>
-            </div>
-            <h1 class="branding-title">Регистрация врача</h1>
-            <p class="branding-subtitle">Присоединяйтесь к профессиональному сообществу ВетОракул</p>
-            <div class="branding-footer"><p>© 2026 ВетОракул</p></div>
-        </div>
-    </aside>
-    <main class="reg-form-section">
-        <div class="reg-form-wrapper">
-            <div class="reg-form-container">
-                <div class="reg-form-header">
-                    <h2 class="reg-form-title">Регистрация врача</h2>
-                    <p class="reg-form-subtitle">Заполните данные для верификации аккаунта</p>
-                </div>
-                <form method="post" class="reg-form">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="form-group">
-                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}<p class="form-hint">{{ field.help_text|safe }}</p>{% endif %}
-                            {% if field.errors %}<p class="form-hint error">{{ field.errors }}</p>{% endif %}
-                        </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-submit">
-                        <span>Зарегистрироваться</span><span class="btn-arrow">→</span>
-                    </button>
-                    <div class="reg-form-footer">
-                        <p>Уже есть аккаунт? <a href="{% url 'login' %}" class="login-link">Войти</a></p>
-                        <p style="margin-top:8px;">Вы клиент? <a href="{% url 'register' %}" class="login-link">Регистрация клиента</a></p>
+    {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+                <div class="toast-notification {{ message.tags }}" role="alert">
+                    <div class="toast-content">
+                        <span class="toast-message">{{ message }}</span>
+                        <button type="button" class="toast-close" aria-label="Закрыть">✕</button>
                     </div>
-                </form>
-            </div>
+                    <div class="toast-progress"></div>
+                </div>
+            {% endfor %}
         </div>
-    </main>
-</div>
+    {% endif %}
+    <div class="reg-page">
+
+        <!-- Левая колонка — брендинг -->
+        <aside class="reg-branding">
+            <div class="branding-content">
+                <div class="branding-logo">
+                    <span class="branding-logo-icon"><img src="{% static 'img/eye1.svg' %}" style="width: 40px;"></span>
+                    <span class="branding-logo-text">ВетОракул</span>
+                </div>
+
+                <h1 class="branding-title">Регистрация ветеринара</h1>
+                <p class="branding-subtitle">Присоединяйтесь к профессиональному сообществу врачей ВетОракул</p>
+
+                <div class="branding-features">
+                    <div class="feature-item">
+                        <div class="feature-icon feature-icon--clipboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                                <path d="M9 14l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Ведение пациентов</h3>
+                            <p>Удобные карточки и история болезней</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon feature-icon--document">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Медицинские записи</h3>
+                            <p>Диагнозы, назначения и рецепты</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="branding-footer">
+                    <p>© 2026 ВетОракул. Все права защищены.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Правая колонка — форма -->
+        <main class="reg-form-section">
+            <div class="reg-form-wrapper">
+                <div class="reg-form-container">
+                    <div class="reg-form-header">
+                        <h2 class="reg-form-title">Регистрация врача</h2>
+                        <p class="reg-form-subtitle">Заполните профессиональные данные для верификации аккаунта</p>
+                    </div>
+
+                    <form class="reg-form reg-form--vet" id="vetForm" method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="form-hint error" style="margin-bottom:12px;">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <!-- Личные данные -->
+                        <div class="form-section-title">Личные данные</div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.last_name.id_for_label }}">Фамилия</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}<div class="form-hint error">{{ form.last_name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.first_name.id_for_label }}">Имя</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}<div class="form-hint error">{{ form.first_name.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.middle_name.id_for_label }}">Отчество</label>
+                            {{ form.middle_name }}
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="form-hint error">{{ form.email.errors }}</div>{% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.phone.id_for_label }}">Телефон</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}<div class="form-hint error">{{ form.phone.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.city.id_for_label }}">Город</label>
+                            {{ form.city }}
+                        </div>
+
+                        <!-- Профессиональные данные -->
+                        <div class="form-section-title">Профессиональные данные</div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.specialization.id_for_label }}">Специализация</label>
+                            {{ form.specialization }}
+                            {% if form.specialization.errors %}<div class="form-hint error">{{ form.specialization.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.education.id_for_label }}">Образование (вуз)</label>
+                                {{ form.education }}
+                                {% if form.education.errors %}<div class="form-hint error">{{ form.education.errors }}</div>{% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.grad_year.id_for_label }}">Год окончания</label>
+                                {{ form.grad_year }}
+                                {% if form.grad_year.errors %}<div class="form-hint error">{{ form.grad_year.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.license_number.id_for_label }}">Номер лицензии/сертификата</label>
+                                {{ form.license_number }}
+                                {% if form.license_number.errors %}<div class="form-hint error">{{ form.license_number.errors }}</div>{% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="{{ form.experience.id_for_label }}">Стаж работы (лет)</label>
+                                {{ form.experience }}
+                                {% if form.experience.errors %}<div class="form-hint error">{{ form.experience.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.clinic.id_for_label }}">Место работы (клиника)</label>
+                            {{ form.clinic }}
+                            {% if form.clinic.errors %}<div class="form-hint error">{{ form.clinic.errors }}</div>{% endif %}
+                        </div>
+
+                        <!-- Безопасность -->
+                        <div class="form-section-title">Безопасность</div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.password1.id_for_label }}">Пароль</label>
+                            <div class="password-input-wrapper">
+                                {{ form.password1 }}
+                                <button type="button" class="password-toggle" onclick="togglePwd('{{ form.password1.id_for_label }}', this)">
+                                    <span class="eye-icon">👁️</span>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-bar"></div>
+                                <div class="strength-bar"></div>
+                                <div class="strength-bar"></div>
+                                <div class="strength-bar"></div>
+                            </div>
+                            {% if form.password1.errors %}<div class="form-hint error">{{ form.password1.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.password2.id_for_label }}">Подтверждение пароля</label>
+                            <div class="password-input-wrapper">
+                                {{ form.password2 }}
+                                <button type="button" class="password-toggle" onclick="togglePwd('{{ form.password2.id_for_label }}', this)">
+                                    <span class="eye-icon">👁️</span>
+                                </button>
+                            </div>
+                            <p class="form-hint" id="passwordMatch"></p>
+                            {% if form.password2.errors %}<div class="form-hint error">{{ form.password2.errors }}</div>{% endif %}
+                        </div>
+
+                        <!-- Чекбоксы -->
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="agreeTerms" required>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-text">
+                                    Я согласен с <a href="#" onclick="event.preventDefault()">условиями использования</a> и <a href="#" onclick="event.preventDefault()">политикой конфиденциальности</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="agreeMedical" required>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-text">
+                                    Подтверждаю наличие действующей медицинской лицензии и согласие на проверку данных
+                                </span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-submit">
+                            <span>Зарегистрироваться</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+
+                        <div class="reg-form-footer">
+                            <p>Уже есть аккаунт? <a href="{% url 'login' %}" class="login-link">Войти</a></p>
+                            <p style="margin-top: 8px;">Вы клиент? <a href="{% url 'register' %}" class="login-link">Зарегистрироваться как клиент</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // ===== ПЕРЕКЛЮЧЕНИЕ ВИДИМОСТИ ПАРОЛЯ =====
+        function togglePwd(id, btn) {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('.eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁️';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ===== МАСКА ДЛЯ ТЕЛЕФОНА =====
+            const phoneInput = document.getElementById('{{ form.phone.id_for_label }}');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/\D/g, '');
+
+                    if (value.length > 0) {
+                        if (value[0] === '7' || value[0] === '8') {
+                            value = value.substring(1);
+                        }
+
+                        let formatted = '+7';
+                        if (value.length > 0) formatted += ' (' + value.substring(0, 3);
+                        if (value.length >= 3) formatted += ') ' + value.substring(3, 6);
+                        if (value.length >= 6) formatted += '-' + value.substring(6, 8);
+                        if (value.length >= 8) formatted += '-' + value.substring(8, 10);
+
+                        e.target.value = formatted;
+                    }
+                });
+            }
+
+            // ===== СЛОЖНОСТЬ ПАРОЛЯ + СОВПАДЕНИЕ =====
+            const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
+            const confirmPasswordInput = document.getElementById('{{ form.password2.id_for_label }}');
+            const strengthIndicator = document.getElementById('passwordStrength');
+            const passwordMatchHint = document.getElementById('passwordMatch');
+
+            function checkPasswordMatch() {
+                if (!passwordInput || !confirmPasswordInput || !passwordMatchHint) return;
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (confirmPassword.length === 0) {
+                    passwordMatchHint.textContent = '';
+                    confirmPasswordInput.classList.remove('error', 'success');
+                    return;
+                }
+
+                if (password === confirmPassword) {
+                    passwordMatchHint.textContent = '✓ Пароли совпадают';
+                    passwordMatchHint.className = 'form-hint success';
+                    confirmPasswordInput.classList.remove('error');
+                    confirmPasswordInput.classList.add('success');
+                } else {
+                    passwordMatchHint.textContent = '✗ Пароли не совпадают';
+                    passwordMatchHint.className = 'form-hint error';
+                    confirmPasswordInput.classList.remove('success');
+                    confirmPasswordInput.classList.add('error');
+                }
+            }
+
+            if (passwordInput && strengthIndicator) {
+                passwordInput.addEventListener('input', function () {
+                    const password = this.value;
+                    let strength = 0;
+
+                    if (password.length >= 8) strength++;
+                    if (/[A-Z]/.test(password)) strength++;
+                    if (/[0-9]/.test(password)) strength++;
+                    if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+                    strengthIndicator.className = 'password-strength';
+
+                    if (password.length === 0) {
+                        // ничего не показываем
+                    } else if (strength <= 1) {
+                        strengthIndicator.classList.add('weak');
+                    } else if (strength === 2) {
+                        strengthIndicator.classList.add('medium');
+                    } else if (strength === 3) {
+                        strengthIndicator.classList.add('strong');
+                    } else {
+                        strengthIndicator.classList.add('very-strong');
+                    }
+
+                    checkPasswordMatch();
+                });
+            }
+
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+            }
+
+            // ===== ПРОВЕРКА ФОРМЫ ПЕРЕД ОТПРАВКОЙ =====
+            const form = document.getElementById('vetForm');
+            const agreeTerms = document.getElementById('agreeTerms');
+            const agreeMedical = document.getElementById('agreeMedical');
+
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (agreeTerms && !agreeTerms.checked) {
+                        e.preventDefault();
+                        alert('Необходимо согласиться с условиями использования.');
+                        return false;
+                    }
+                    if (agreeMedical && !agreeMedical.checked) {
+                        e.preventDefault();
+                        alert('Необходимо подтвердить наличие медицинской лицензии.');
+                        return false;
+                    }
+                    if (passwordInput && confirmPasswordInput &&
+                        passwordInput.value !== confirmPasswordInput.value) {
+                        e.preventDefault();
+                        alert('Пароли не совпадают!');
+                        return false;
+                    }
+                    if (passwordInput && passwordInput.value.length < 8) {
+                        e.preventDefault();
+                        alert('Пароль должен содержать минимум 8 символов!');
+                        return false;
+                    }
+                    // Если всё хорошо — форма отправляется на сервер штатно
+                });
+            }
+        });
+    </script>
+    <script src={% static 'js/messages.js' %} type="text/javascript"></script>
 </body>
 </html>

@@ -188,6 +188,9 @@
                         {{ r.get_reminder_type_display }} • {{ r.get_status_display }}
                         {% if r.time %} • {{ r.time|time:"H:i" }}{% endif %}
                     </p>
+                    {% if r.description %}
+                        <p class="reminder-description" title="{{ r.description }}">{{ r.description }}</p>
+                    {% endif %}
                 </div>
                 {% if can_edit %}
                     <div style="display:flex;gap:6px;">

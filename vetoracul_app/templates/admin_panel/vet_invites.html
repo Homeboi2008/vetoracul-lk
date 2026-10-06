@@ -1,0 +1,83 @@
+{% extends 'base_app.html' %}
+{% block title %}Приглашения ветеринаров{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🩺 Приглашения ветеринаров</h1>
+        <p class="page-subtitle">Одноразовые ссылки для регистрации врачей</p>
+    </div>
+</div>
+
+<div class="settings-card" style="max-width:900px;margin-bottom:24px;">
+    <form method="post" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        {% csrf_token %}
+        <div class="form-group" style="flex:1;min-width:260px;margin:0;">
+            <label class="form-label">Заметка (для себя)</label>
+            <input type="text" name="note" class="form-input"
+                   placeholder="Например: Иванов И.И., МГАВМиБ, рекомендован...">
+        </div>
+        <button type="submit" class="btn btn-primary">+ Создать ссылку</button>
+    </form>
+</div>
+
+{% if tokens %}
+    <div class="settings-card" style="max-width:900px;">
+        <h3 class="settings-group-title">История приглашений</h3>
+        {% for t in tokens %}
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--color-border);">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+                        <span class="pet-tag" style="
+                            {% if t.obj.is_used %}background:#f3f4f6;color:#6b7280;
+                            {% elif t.obj.is_expired %}background:#fee2e2;color:#991b1b;
+                            {% else %}background:#d1fae5;color:#065f46;{% endif %}">
+                            {{ t.obj.status_display }}
+                        </span>
+                        <small style="color:var(--color-text-secondary);">
+                            {{ t.obj.created_at|date:"d.m.Y H:i" }}
+                            {% if t.obj.created_by %} • {{ t.obj.created_by.get_full_name|default:t.obj.created_by.username }}{% endif %}
+                        </small>
+                    </div>
+                    {% if t.obj.note %}
+                        <div style="font-size:0.85rem;color:var(--color-text-secondary);margin-bottom:6px;">
+                            📝 {{ t.obj.note }}
+                        </div>
+                    {% endif %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" class="form-input" value="{{ t.url }}" readonly
+                               onclick="this.select()"
+                               style="font-size:0.8rem;padding:6px 10px;background:#f5f0ff;">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                                onclick="copyLink(this, '{{ t.url }}')">Копировать</button>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--color-text-secondary);margin-top:4px;">
+                        Действует до: {{ t.obj.expires_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+                <form method="post" action="{% url 'admin_vet_invites_revoke' t.obj.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline"
+                            style="color:#dc2626;border-color:#dc2626;"
+                            onclick="return confirm('Удалить эту ссылку?')">Удалить</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="docs-empty">
+        <h3 class="empty-title">Пока нет приглашений</h3>
+        <p class="empty-text">Создайте первую ссылку выше</p>
+    </div>
+{% endif %}
+
+<script>
+function copyLink(btn, url) {
+    navigator.clipboard.writeText(url).then(() => {
+        const old = btn.textContent;
+        btn.textContent = 'Скопировано';
+        setTimeout(() => btn.textContent = old, 1500);
+    });
+}
+</script>
+{% endblock %}

@@ -15,8 +15,8 @@ from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.db.models import Q
 
-from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document, VetAccess, VetAccessRequest
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm
+from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document, VetAccess, VetAccessRequest, VetInviteToken, VetProfile
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm, ResendCodeByEmailForm
 
 from datetime import timedelta
 
@@ -181,7 +181,7 @@ class CustomLoginView(LoginView):
         return response
 
     def form_invalid(self, form):
-        messages.error(self.request, 'Неверный email/логин или пароль.')
+        messages.error(self.request, 'Неверный email или пароль.')
         return super().form_invalid(form)
 
 
@@ -219,11 +219,28 @@ class VerifyEmailView(FormView):
     success_url = reverse_lazy('home')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.session.get('pending_user_id'):
+        user_id = request.session.get('pending_user_id')
+        if not user_id:
             messages.error(request, 'Сессия истекла. Зарегистрируйтесь заново.')
             return redirect('register')
-        self.user_id = request.session['pending_user_id']
-        self.user = get_object_or_404(User, id=self.user_id, is_active=False)
+
+        self.user_id = user_id
+        try:
+            self.user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, 'Пользователь не найден. Зарегистрируйтесь заново.')
+            request.session.pop('pending_user_id', None)
+            return redirect('register')
+
+        # Если пользователь уже активирован (например, форма отправлена повторно) —
+        # просто логиним и впускаем, без падения
+        if self.user.is_active:
+            self.user.backend = 'django.contrib.auth.backends.ModelBackend'
+            login(request, self.user)
+            request.session.pop('pending_user_id', None)
+            messages.success(request, 'Email уже подтверждён. Добро пожаловать!')
+            return redirect('home')
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -235,16 +252,20 @@ class VerifyEmailView(FormView):
         # Код верен – активируем пользователя
         self.user.is_active = True
         self.user.save()
-        # Удаляем код
+
+        # Удаляем код — больше не нужен
         EmailVerificationCode.objects.filter(user=self.user).delete()
 
-        # 👇 ВАЖНО: указываем backend явно, т.к. их несколько
+        # Явно указываем backend, т.к. их несколько
         self.user.backend = 'django.contrib.auth.backends.ModelBackend'
 
-        # Автоматически логиним пользователя
+        # Логиним пользователя
         login(self.request, self.user)
         messages.success(self.request, 'Ваш email подтверждён! Добро пожаловать.')
-        del self.request.session['pending_user_id']
+
+        # 🔑 Безопасно удаляем ключ сессии (не падаем, если ключа уже нет)
+        self.request.session.pop('pending_user_id', None)
+
         return super().form_valid(form)
 
 class ResendCodeView(View):
@@ -253,19 +274,19 @@ class ResendCodeView(View):
         if not user_id:
             messages.error(request, 'Сессия истекла. Зарегистрируйтесь заново.')
             return redirect('register')
-        user = get_object_or_404(User, id=user_id, is_active=False)
-        # Удаляем старый код, генерируем новый
+        user = get_object_or_404(User, id=user_id)
+        if user.is_active:
+            messages.info(request, 'Аккаунт уже активирован. Войдите.')
+            request.session.pop('pending_user_id', None)
+            return redirect('login')
+
         EmailVerificationCode.objects.filter(user=user).delete()
         new_code = EmailVerificationCode.objects.create(user=user)
-        # Отправляем письмо повторно
         subject = 'Новый код подтверждения'
         message = f'Здравствуйте, {user.username}!\n\nВаш новый код: {new_code.code}'
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
         messages.success(request, 'Новый код отправлен на ваш email.')
         return redirect('verify_email')
-    
-
-
 
 
 # ---------- Папки ----------
@@ -715,8 +736,8 @@ class DocumentUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Diagnosis.objects.all()
-        return Diagnosis.objects.filter(
+            return Document.objects.filter(is_deleted=False)
+        return Document.objects.filter(is_deleted=False).filter(
             Q(pet__owner=user)
             | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
@@ -771,8 +792,8 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Diagnosis.objects.all()
-        return Diagnosis.objects.filter(
+            return Reminder.objects.all()
+        return Reminder.objects.filter(
             Q(pet__owner=user)
             | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
@@ -798,8 +819,8 @@ class ReminderDeleteView(LoginRequiredMixin, DeleteView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'vet':
-            return Diagnosis.objects.all()
-        return Diagnosis.objects.filter(
+            return Reminder.objects.all()
+        return Reminder.objects.filter(
             Q(pet__owner=user)
             | Q(pet__co_owner_links__user=user, pet__co_owner_links__access_level='write')
         ).distinct()
@@ -909,6 +930,11 @@ def home_view(request):
 
     notifications_count = pending_vet_requests.count() + past_pending_reminders.count()
 
+    upcoming_reminders = reminders.filter(
+        status=Reminder.Status.PENDING,
+        date__gte=timezone.now().date()
+    )[:5]
+    
     context = {
         'pets': pets,
         'documents': documents,
@@ -918,6 +944,7 @@ def home_view(request):
         'pets_filter': pets_filter,
         'folders': folders,
         'folders_json': folders_json,
+        'upcoming_reminders': upcoming_reminders,
         'reminders_json': reminders_json,
         'profile_form': profile_form,
         'notification_form': notification_form,
@@ -948,28 +975,6 @@ def document_move(request, pk):
         doc.folder = None
     doc.save(update_fields=['folder'])
     return JsonResponse({'ok': True})
-
-    
-class VetRegisterView(CreateView):
-    form_class = VetRegistrationForm
-    template_name = 'auth/register_vet.html'
-    success_url = reverse_lazy('verify_email')
-
-    def form_valid(self, form):
-        user = form.save(commit=False)
-        user.role = 'vet'
-        user.is_active = False
-        user.save()
-        code_obj = EmailVerificationCode.objects.create(user=user)
-        send_mail(
-            'Подтверждение регистрации ветеринара в ВетОракуле',
-            f'Здравствуйте, {user.first_name}!\n\nВаш код подтверждения: {code_obj.code}\n\nКод действителен 15 минут.',
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-        )
-        self.request.session['pending_user_id'] = user.id
-        messages.success(self.request, 'На ваш email отправлен код подтверждения.')
-        return super().form_valid(form)
     
 class VetPatientCardView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Pet
@@ -1318,3 +1323,202 @@ def reminder_update_status(request, pk):
         r.save(update_fields=['status'])
         messages.success(request, 'Статус напоминания обновлён.')
     return redirect(reverse('home') + '#notifications')
+
+@login_required
+def clear_notifications(request):
+    """POST — очищает все активные уведомления пользователя.
+    Заявки ветеринаров помечает как «Отклонено»,
+    прошедшим напоминаниям ставит статус «Пропущено»."""
+    if request.method != 'POST':
+        return redirect('home')
+
+    user = request.user
+    now = timezone.now()
+    today = now.date()
+
+    # 1. Заявки ветеринаров → отклоняем
+    vet_count = VetAccessRequest.objects.filter(
+        pet__owner=user,
+        status=VetAccessRequest.Status.PENDING,
+    ).update(
+        status=VetAccessRequest.Status.REJECTED,
+        responded_at=now,
+    )
+        # Уведомления ветеринарам об отклонении
+    rejected_requests = VetAccessRequest.objects.filter(
+        pet__owner=user,
+        status=VetAccessRequest.Status.REJECTED,
+        responded_at__gte=now - timedelta(seconds=10),  # только что отклонённые
+    ).select_related('vet', 'pet')
+
+    for req in rejected_requests:
+        if not req.vet.notify_email:
+            continue
+        if req.vet.email:
+            try:
+                send_mail(
+                    f'Заявка на доступ к {req.pet.name} отклонена',
+                    f'Здравствуйте!\n\n'
+                    f'Владелец отклонил ваш запрос на доступ к питомцу '
+                    f'{req.pet.name}.\n\n— ВетОракул',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [req.vet.email],
+                )
+            except Exception as e:
+                logger.error('Не удалось отправить письмо ветеринару %s: %s', req.vet_id, e)
+    # 2. Прошедшие напоминания → «Пропущено»
+    pets = (user.pets.all() | user.co_owned_pets.all()).distinct()
+    reminders_count = Reminder.objects.filter(
+        pet__in=pets,
+        status=Reminder.Status.PENDING,
+        date__lt=today,
+    ).update(status=Reminder.Status.MISSED)
+
+    total = vet_count + reminders_count
+    if total:
+        messages.success(
+            request,
+            f'Уведомления очищены. Заявок отклонено: {vet_count}, '
+            f'напоминаний помечено как «Пропущено»: {reminders_count}.'
+        )
+    else:
+        messages.info(request, 'Уведомлений не было.')
+
+    return redirect(reverse('home') + '#notifications')
+
+@login_required
+def vet_register_redirect(request):
+    """Публичная страница /register/vet/ — редирект на инфо-страницу."""
+    return render(request, 'auth/vet_register_required.html')
+
+
+def vet_register_by_token(request, token):
+    """Регистрация ветеринара по одноразовой ссылке."""
+    try:
+        invite = VetInviteToken.objects.get(token=token)
+    except VetInviteToken.DoesNotExist:
+        return render(request, 'auth/vet_register_required.html', {
+            'invalid_reason': 'not_found'
+        })
+
+    if invite.is_used:
+        return render(request, 'auth/vet_register_required.html', {
+            'invalid_reason': 'used'
+        })
+    if invite.is_expired:
+        return render(request, 'auth/vet_register_required.html', {
+            'invalid_reason': 'expired'
+        })
+
+    if request.method == 'POST':
+        form = VetRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            VetProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    'specialization': form.cleaned_data['specialization'],
+                    'education': form.cleaned_data['education'],
+                    'grad_year': form.cleaned_data['grad_year'],
+                    'license_number': form.cleaned_data['license_number'],
+                    'experience': form.cleaned_data['experience'],
+                    'clinic': form.cleaned_data['clinic'],
+                },
+            )
+
+            invite.used_at = timezone.now()
+            invite.save(update_fields=['used_at'])
+
+            # Стандартный код подтверждения email
+            code_obj = EmailVerificationCode.objects.create(user=user)
+            send_mail(
+                'Подтверждение регистрации ветеринара в ВетОракуле',
+                f'Здравствуйте, {user.first_name}!\n\n'
+                f'Ваш код подтверждения: {code_obj.code}\n\n'
+                f'Код действителен 15 минут.',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+            )
+            request.session['pending_user_id'] = user.id
+            messages.success(request, 'На ваш email отправлен код подтверждения.')
+            return redirect('verify_email')
+    else:
+        form = VetRegistrationForm()
+
+    return render(request, 'auth/register_vet.html', {
+        'form': form,
+        'invite': invite,
+    })
+
+
+# ---------- Панель администратора ----------
+
+@login_required
+def admin_vet_invites(request):
+    """Панель управления приглашениями ветеринаров."""
+    if not request.user.is_staff:
+        messages.error(request, 'Доступ только для администраторов.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        note = request.POST.get('note', '').strip()
+        token = VetInviteToken.objects.create(
+            created_by=request.user,
+            note=note,
+        )
+        messages.success(request, 'Ссылка для приглашения создана.')
+        return redirect('admin_vet_invites')
+
+    tokens = VetInviteToken.objects.select_related('created_by').order_by('-created_at')
+
+    # Формируем абсолютный URL для каждой ссылки
+    tokens_with_url = [
+        {
+            'obj': t,
+            'url': request.build_absolute_uri(
+                reverse('vet_register_by_token', kwargs={'token': str(t.token)})
+            ),
+        }
+        for t in tokens
+    ]
+
+    return render(request, 'admin_panel/vet_invites.html', {
+        'tokens': tokens_with_url,
+    })
+
+
+@login_required
+def admin_vet_invites_revoke(request, pk):
+    """POST — отозвать/удалить ссылку."""
+    if not request.user.is_staff:
+        return redirect('home')
+    if request.method == 'POST':
+        VetInviteToken.objects.filter(pk=pk).delete()
+        messages.success(request, 'Ссылка удалена.')
+    return redirect('admin_vet_invites')
+
+
+class ResendCodeByEmailView(FormView):
+    form_class = ResendCodeByEmailForm
+    template_name = 'auth/resend_code_by_email.html'
+    success_url = reverse_lazy('verify_email')
+
+    def form_valid(self, form):
+        user = form.user
+        # Удаляем старый код и создаём новый
+        EmailVerificationCode.objects.filter(user=user).delete()
+        code_obj = EmailVerificationCode.objects.create(user=user)
+
+        send_mail(
+            'Новый код подтверждения — ВетОракул',
+            f'Здравствуйте, {user.first_name or user.username}!\n\n'
+            f'Ваш новый код подтверждения: {code_obj.code}\n\n'
+            f'Код действителен 15 минут.',
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+        )
+
+        # Восстанавливаем сессию, чтобы verify_email работал
+        self.request.session['pending_user_id'] = user.id
+        messages.success(self.request, 'Новый код отправлен на ваш email.')
+        return super().form_valid(form)

@@ -60,10 +60,10 @@ class User(AbstractUser):
     )
 
     # Настройки уведомлений
+    notify_email = models.BooleanField(default=True, verbose_name='Получать уведомления на почту')
     notify_appointments = models.BooleanField(default=True, verbose_name='Записи на приём')
     notify_vaccinations = models.BooleanField(default=True, verbose_name='Напоминания о вакцинации')
     notify_urgent = models.BooleanField(default=True, verbose_name='Срочные случаи')
-    notify_news = models.BooleanField(default=False, verbose_name='Новости и обновления')
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -85,6 +85,19 @@ class User(AbstractUser):
             is_active=True,
             end_date__gte=timezone.now().date()
         ).exists()
+        
+    def can_email(self, topic=None):
+        """Можно ли отправлять пользователю email.
+        topic: None | 'appointments' | 'vaccinations' | 'urgent' | 'news'."""
+        if not self.email or not self.notify_email:
+            return False
+        if topic == 'appointments' and not self.notify_appointments:
+            return False
+        if topic == 'vaccinations' and not self.notify_vaccinations:
+            return False
+        if topic == 'urgent' and not self.notify_urgent:
+            return False
+        return True
 
 
 class Pet(models.Model):
@@ -701,3 +714,95 @@ class VetAccess(models.Model):
 
     def __str__(self):
         return f'{self.vet} → {self.pet.name} ({self.get_access_level_display()})'
+    
+import uuid
+
+
+class VetProfile(models.Model):
+    """Профессиональные данные ветеринара."""
+    class Specialization(models.TextChoices):
+        THERAPIST = 'therapist', 'Терапевт'
+        SURGEON = 'surgeon', 'Хирург'
+        ONCOLOGIST = 'oncologist', 'Онколог-гематолог'
+        CARDIOLOGIST = 'cardiologist', 'Кардиолог'
+        NEUROLOGIST = 'neurologist', 'Невролог'
+        DERMATOLOGIST = 'dermatologist', 'Дерматолог'
+        OPHTHALMOLOGIST = 'ophthalmologist', 'Офтальмолог'
+        DENTIST = 'dentist', 'Стоматолог'
+        REHABILITOLOGIST = 'rehabilitologist', 'Реабилитолог'
+        EXOTIC = 'exotic', 'Специалист по экзотическим животным'
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE,
+        related_name='vet_profile',
+        verbose_name='Пользователь'
+    )
+    specialization = models.CharField(
+        max_length=50,
+        choices=Specialization.choices,
+        verbose_name='Специализация'
+    )
+    education = models.CharField(max_length=200, verbose_name='Образование (вуз)')
+    grad_year = models.IntegerField(verbose_name='Год окончания')
+    license_number = models.CharField(max_length=50, verbose_name='Номер лицензии')
+    experience = models.IntegerField(verbose_name='Стаж (лет)')
+    clinic = models.CharField(max_length=200, verbose_name='Место работы')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Профиль ветеринара'
+        verbose_name_plural = 'Профили ветеринаров'
+
+    def __str__(self):
+        return f'{self.user.get_full_name()} — {self.get_specialization_display()}'
+
+
+class VetInviteToken(models.Model):
+    """Одноразовая ссылка для регистрации ветеринара. Генерируется админом."""
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True,
+        related_name='created_vet_tokens',
+        verbose_name='Кем создана'
+    )
+    note = models.CharField(
+        max_length=200, blank=True,
+        verbose_name='Заметка',
+        help_text='Например: «Иванов И.И., МГАВМиБ, рекомендован Петровой А.»'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    expires_at = models.DateTimeField(verbose_name='Действует до')
+    used_at = models.DateTimeField(null=True, blank=True, verbose_name='Использована')
+
+    class Meta:
+        verbose_name = 'Приглашение ветеринара'
+        verbose_name_plural = 'Приглашения ветеринаров'
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=7)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_used(self):
+        return self.used_at is not None
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_valid(self):
+        return not self.is_used and not self.is_expired
+
+    @property
+    def status_display(self):
+        if self.is_used:
+            return 'Использована'
+        if self.is_expired:
+            return 'Истекла'
+        return 'Активна'
+
+    def __str__(self):
+        return f'{self.token} ({self.status_display})'

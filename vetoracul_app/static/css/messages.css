@@ -1,0 +1,176 @@
+/* Контейнер для уведомлений */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 0; /* Привязка к правому краю */
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Выравнивание по правому краю */
+    gap: 10px;
+    max-width: 350px;
+    width: 100%;
+    pointer-events: none;
+    border-radius: 15px 0 0 15px;
+}
+
+.toast-container .toast-notification {
+    pointer-events: auto;
+}
+
+/* Стили для уведомления */
+.toast-notification {
+    background: white;
+    border-radius: 16px; /* Сильное скругление */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: slideIn 0.3s ease-in-out;
+    position: relative;
+    width: 100%;
+    border: none; /* Убираем границу */
+}
+
+.toast-notification.list-group-item-success .toast-progress  {
+    background: #28a745;
+}
+
+.toast-notification.list-group-item-danger .toast-progress {
+    background: #e61b30 !important;
+}
+
+.toast-notification.list-group-item-warning .toast-progress {
+    background: #ffc107 !important;
+}
+
+.toast-notification.list-group-item-info .toast-progress {
+    background: #17a2b8 !important;
+}
+
+/* Содержимое уведомления */
+.toast-content {
+    display: flex;
+    align-items: flex-start; /* Выравнивание по верхнему краю */
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: white;
+    position: relative;
+    text-align: left;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    padding-right: 30px; /* Место для крестика */
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* Кнопка закрытия - нормальный маленький крестик */
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.2s;
+    border-radius: 50%; /* Круглая форма при наведении */
+    position: absolute;
+    top: 14px;
+    right: 16px;
+}
+
+.toast-close:hover {
+    color: #333;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Прогресс-бар (для авто-скрытия) */
+.toast-progress {
+    height: 3px;
+    width: 100%;
+    animation: progress 15s linear forwards;
+    transform-origin: left;
+    border-radius: 0 0 16px 16px; /* Скругление только снизу */
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        transform: translateX(30px); /* Небольшой сдвиг для эффекта */
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(30px);
+        opacity: 0;
+    }
+}
+
+@keyframes progress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+/* Анимация скрытия */
+.toast-notification.hide {
+    animation: slideOut 0.3s ease-in-out forwards;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 480px) {
+    .toast-container {
+        max-width: 100%;
+        padding-left: 16px;
+    }
+    
+    .toast-notification {
+        border-radius: 12px;
+    }
+    
+    .toast-content {
+        padding: 14px 16px;
+    }
+    
+    .toast-message {
+        font-size: 13px;
+        padding-right: 28px;
+    }
+    
+    .toast-close {
+        top: 12px;
+        right: 14px;
+        width: 22px;
+        height: 22px;
+        font-size: 16px;
+    }
+}
+.error-border {
+    border: 2px solid #C02424 !important;
+    background-color: #e9ecef !important;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    box-shadow: 0 0 0 0.2rem rgba(192, 36, 36, 0.15);
+}
+
+.error-border:focus {
+    outline: none;
+    border-color: #80bdff !important;
+    background-color: #fff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}

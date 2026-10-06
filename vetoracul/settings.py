@@ -1,5 +1,6 @@
 from pathlib import Path
 from Config import DjangoSettings, DatabaseSettings, EmailSettings
+from django.contrib import messages
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -122,6 +123,14 @@ AUTHENTICATION_BACKENDS = [
     'vetoracul_app.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'p-2 list-group-item list-group-item-secondary text-center',
+    messages.INFO: 'p-2 list-group-item list-group-item-info text-center',
+    messages.SUCCESS: 'p-2 list-group-item list-group-item-success text-center',
+    messages.WARNING: 'p-2 list-group-item list-group-item-warning text-center',
+    messages.ERROR: 'p-2 list-group-item list-group-item-danger text-center',
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

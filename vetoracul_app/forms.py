@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.forms import (
     UserCreationForm, AuthenticationForm, PasswordResetForm, SetPasswordForm
 )
-from .models import Diagnosis, Reminder, User, EmailVerificationCode, Folder, Document, Pet, PetCoOwner
+from .models import Diagnosis, Reminder, User, EmailVerificationCode, Folder, Document, Pet, PetCoOwner, VetProfile, VetInviteToken
 
 
 # =========================================================
@@ -44,59 +44,141 @@ class CustomUserCreationForm(UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if User.objects.filter(email__iexact=email).exists():
+        existing = User.objects.filter(email__iexact=email).first()
+        if existing and existing.is_active:
             raise forms.ValidationError('Пользователь с таким email уже существует.')
         return email
 
     def save(self, commit=True):
+        email = self.cleaned_data['email']
+        existing = User.objects.filter(email__iexact=email, is_active=False).first()
+
+        if existing:
+            user = existing
+            user.username = user.username  # оставляем как есть
+            user.first_name = self.cleaned_data['first_name']
+            user.last_name = self.cleaned_data['last_name']
+            user.middle_name = self.cleaned_data.get('middle_name', '')
+            user.phone = self.cleaned_data['phone']
+            user.role = 'user'
+            user.set_password(self.cleaned_data['password1'])
+            if commit:
+                user.save()
+            return user
+
+        # Обычный путь
         user = super().save(commit=False)
-        # Генерируем уникальный username из email
-        base = self.cleaned_data['email'].split('@')[0]
+        base = email.split('@')[0]
         username = base
         counter = 1
         while User.objects.filter(username=username).exists():
             username = f'{base}{counter}'
             counter += 1
         user.username = username
-        user.role = 'user'  # Жёстко фиксируем роль
+        user.role = 'user'
         if commit:
             user.save()
         return user
 
 
 class VetRegistrationForm(UserCreationForm):
-    """Расширенная форма регистрации ветеринара."""
-    email = forms.EmailField(required=True, label='Email')
-    phone = forms.CharField(max_length=20, required=True, label='Телефон')
+    """Форма регистрации ветеринара (по одноразовой ссылке)."""
     first_name = forms.CharField(max_length=50, required=True, label='Имя')
     last_name = forms.CharField(max_length=50, required=True, label='Фамилия')
     middle_name = forms.CharField(max_length=50, required=False, label='Отчество')
+    email = forms.EmailField(required=True, label='Email')
+    phone = forms.CharField(max_length=20, required=True, label='Телефон')
     city = forms.CharField(max_length=100, required=False, label='Город')
-    # specialization = forms.CharField(max_length=100, required=True, label='Специализация')
-    # education = forms.CharField(max_length=200, required=True, label='Образование (вуз)')
-    # grad_year = forms.IntegerField(required=True, label='Год окончания', min_value=1950, max_value=2030)
-    # license_number = forms.CharField(max_length=50, required=True, label='Номер лицензии')
-    # experience = forms.IntegerField(required=True, label='Стаж (лет)', min_value=0, max_value=60)
-    # clinic = forms.CharField(max_length=200, required=True, label='Место работы')
+
+    specialization = forms.ChoiceField(
+        choices=VetProfile.Specialization.choices,
+        label='Специализация', required=True,
+    )
+    education = forms.CharField(
+        max_length=200, required=True,
+        label='Образование (вуз)',
+        widget=forms.TextInput(attrs={'placeholder': 'МГАВМиБ им. Скрябина'}),
+    )
+    grad_year = forms.IntegerField(
+        required=True, label='Год окончания',
+        min_value=1950, max_value=2030,
+    )
+    license_number = forms.CharField(
+        max_length=50, required=True,
+        label='Номер лицензии/сертификата',
+        widget=forms.TextInput(attrs={'placeholder': 'ВЛ-123456'}),
+    )
+    experience = forms.IntegerField(
+        required=True, label='Стаж работы (лет)',
+        min_value=0, max_value=60,
+    )
+    clinic = forms.CharField(
+        max_length=200, required=True,
+        label='Место работы (клиника)',
+        widget=forms.TextInput(attrs={'placeholder': 'ВетОракул'}),
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'phone', 'first_name', 'last_name')
+        fields = ('email', 'first_name', 'last_name', 'middle_name', 'phone', 'city')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        apply_input_classes(self.fields)
+        self.fields.pop('username', None)
+
+        for name, field in self.fields.items():
+            if name == 'specialization':
+                field.widget.attrs.update({'class': 'form-input form-select'})
+            else:
+                field.widget.attrs.update({'class': 'form-input'})
+
+        # Плейсхолдеры — как в образце
+        self.fields['last_name'].widget.attrs['placeholder'] = 'Иванов'
+        self.fields['first_name'].widget.attrs['placeholder'] = 'Иван'
+        self.fields['middle_name'].widget.attrs['placeholder'] = 'Иванович'
+        self.fields['email'].widget.attrs['placeholder'] = 'doctor@vetoracul.ru'
+        self.fields['phone'].widget.attrs['placeholder'] = '+7 (___) ___-__-__'
+        self.fields['city'].widget.attrs['placeholder'] = 'Москва'
+        self.fields['education'].widget.attrs['placeholder'] = 'МГАВМиБ им. Скрябина'
+        self.fields['grad_year'].widget.attrs['placeholder'] = '2015'
+        self.fields['license_number'].widget.attrs['placeholder'] = 'ВЛ-123456'
+        self.fields['experience'].widget.attrs['placeholder'] = '5'
+        self.fields['clinic'].widget.attrs['placeholder'] = 'ВетОракул'
+        self.fields['password1'].widget.attrs['placeholder'] = 'Минимум 8 символов'
+        self.fields['password2'].widget.attrs['placeholder'] = 'Повторите пароль'
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        existing = User.objects.filter(email__iexact=email).first()
+        if existing and existing.is_active:
+            raise forms.ValidationError('Пользователь с таким email уже существует.')
+        return email
 
     def save(self, commit=True):
-        user = super().save(commit=False)
+        email = self.cleaned_data['email']
+        existing = User.objects.filter(email__iexact=email, is_active=False).first()
+
+        if existing:
+            user = existing
+        else:
+            user = super().save(commit=False)
+            base = email.split('@')[0]
+            username = base
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f'{base}{counter}'
+                counter += 1
+            user.username = username
+
         user.role = 'vet'
         user.is_active = False
-        user.email = self.cleaned_data['email']
-        user.phone = self.cleaned_data['phone']
+        user.email = email
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.middle_name = self.cleaned_data.get('middle_name', '')
+        user.phone = self.cleaned_data['phone']
         user.city = self.cleaned_data.get('city', '')
+        user.set_password(self.cleaned_data['password1'])
         if commit:
             user.save()
         return user
@@ -377,4 +459,24 @@ class UserProfileForm(forms.ModelForm):
 class NotificationSettingsForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('notify_appointments', 'notify_vaccinations', 'notify_urgent', 'notify_news')
+        fields = (
+            'notify_email',
+            'notify_appointments',
+            'notify_vaccinations',
+            'notify_urgent',
+        )
+        
+class ResendCodeByEmailForm(forms.Form):
+    email = forms.EmailField(
+        label='Email',
+        widget=forms.EmailInput(attrs={'class': 'form-input', 'placeholder': 'example@mail.ru'}),
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        try:
+            user = User.objects.get(email__iexact=email, is_active=False)
+        except User.DoesNotExist:
+            raise forms.ValidationError('Активный аккаунт с таким email не найден или уже подтверждён.')
+        self.user = user
+        return email

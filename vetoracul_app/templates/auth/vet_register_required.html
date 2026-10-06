@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация ветеринара — ВетОракул</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style-reg.css' %}">
+    <link rel="stylesheet" href="{% static 'css/messages.css' %}">
+</head>
+<body>
+<div class="reg-page">
+    <aside class="reg-branding">
+        <div class="branding-content">
+            <div class="branding-logo">
+                    <span class="branding-logo-icon"><img src="{% static 'img/eye1.svg' %}" style="width: 40px;"></span>
+                    <span class="branding-logo-text">ВетОракул</span>
+                </div>
+            <h1 class="branding-title">Регистрация ветеринара</h1>
+            <p class="branding-subtitle">
+                Доступ для ветеринаров выдаётся по приглашению.
+            </p>
+            <div class="branding-footer"><p>© 2026 ВетОракул</p></div>
+        </div>
+    </aside>
+    {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+                <div class="toast-notification {{ message.tags }}" role="alert">
+                    <div class="toast-content">
+                        <span class="toast-message">{{ message }}</span>
+                        <button type="button" class="toast-close" aria-label="Закрыть">✕</button>
+                    </div>
+                    <div class="toast-progress"></div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <main class="reg-form-section reg-form-section--centered">
+        <div class="reg-form-wrapper">
+            <div class="reg-form-container">
+                <div class="reg-form-header">
+                    {% if invalid_reason == 'used' %}
+                        <h2 class="reg-form-title">Ссылка уже использована</h2>
+                        <p class="reg-form-subtitle">
+                            Эта ссылка одноразовая. Если вы уже завершили регистрацию —
+                            <a href="{% url 'login' %}" class="login-link">войдите</a>.
+                            Если нет — запросите новую ссылку у администратора.
+                        </p>
+                    {% elif invalid_reason == 'expired' %}
+                        <h2 class="reg-form-title">Ссылка истекла</h2>
+                        <p class="reg-form-subtitle">
+                            Ссылки действуют 7 дней. Запросите новую у администратора.
+                        </p>
+                    {% elif invalid_reason == 'not_found' %}
+                        <h2 class="reg-form-title">Ссылка не найдена</h2>
+                        <p class="reg-form-subtitle">
+                            Проверьте правильность ссылки или запросите новую у администратора.
+                        </p>
+                    {% else %}
+                        <h2 class="reg-form-title">Нужно приглашение</h2>
+                        <p class="reg-form-subtitle">
+                            Регистрация ветеринаров доступна только по одноразовой ссылке,
+                            которую выдаёт администратор клиники после проверки документов.
+                        </p>
+                    {% endif %}
+                </div>
+
+                <div style="padding:18px;background:#f5f0ff;border-radius:14px;border-left:3px solid var(--color-accent);margin:16px 0;font-size:0.9rem;line-height:1.5;">
+                    <strong>Что делать дальше:</strong>
+                    <ol style="margin:8px 0 0 0;padding-left:18px;">
+                        <li>Свяжитесь с администратором клиники.</li>
+                        <li>Предоставьте документы об образовании и лицензию.</li>
+                        <li>После проверки администратор пришлёт ссылку для регистрации.</li>
+                    </ol>
+                </div>
+
+                <div class="reg-form-footer">
+                    <p><a href="{% url 'login' %}" class="login-link">Вернуться ко входу</a></p>
+                    <p style="margin-top:8px;">Вы клиент? <a href="{% url 'register' %}" class="login-link">Зарегистрироваться</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src={% static 'js/messages.js' %} type="text/javascript"></script>
+</body>
+</html>
