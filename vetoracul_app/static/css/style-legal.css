@@ -1,0 +1,624 @@
+/* ===== СТИЛИ ДЛЯ ЮРИДИЧЕСКИХ СТРАНИЦ ===== */
+
+.legal-container {
+  max-width: 860px;
+  padding: 40px 32px;
+}
+
+.legal-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.legal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+}
+
+.legal-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.legal-updated {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: var(--color-bg);
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* Секции документа */
+.legal-section {
+  margin-bottom: 32px;
+}
+
+.legal-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.legal-section-number {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-right: 12px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Текст документа */
+.legal-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+.legal-text p {
+  margin: 0 0 12px 0;
+}
+
+.legal-text ul,
+.legal-text ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.legal-text li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.legal-text strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.legal-text a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--color-accent);
+  transition: all 0.2s;
+}
+
+.legal-text a:hover {
+  color: var(--color-primary);
+  border-bottom-style: solid;
+}
+
+/* Таблицы в документах */
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+}
+
+.legal-table th {
+  background: var(--color-bg);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.legal-table tr:nth-child(even) {
+  background: #faf7ff;
+}
+
+/* Блок с реквизитами */
+.legal-requisites {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  margin: 20px 0;
+}
+
+.legal-requisites-title {
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.legal-requisites-row {
+  display: flex;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--color-border);
+  font-size: 0.9rem;
+}
+
+.legal-requisites-row:last-child {
+  border-bottom: none;
+}
+
+.legal-requisites-label {
+  min-width: 200px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.legal-requisites-value {
+  flex: 1;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+/* Форма согласия */
+.consent-form {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  margin-top: 24px;
+}
+
+.consent-form-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--color-primary);
+  margin: 0 0 20px 0;
+}
+
+.consent-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.consent-checkbox:hover {
+  border-color: var(--color-accent);
+}
+
+.consent-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.consent-checkbox-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.consent-checkbox-text strong {
+  color: var(--color-primary);
+}
+
+.consent-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+/* Дисклеймер-блок */
+.disclaimer-box {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin: 24px 0;
+}
+
+.disclaimer-box--danger {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: var(--color-danger);
+}
+
+.disclaimer-box--info {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border-color: var(--color-accent);
+}
+
+.disclaimer-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.disclaimer-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* Кнопка "Назад" */
+.legal-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 24px;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.legal-back-link:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .legal-container {
+    padding: 24px 20px;
+  }
+  
+  .legal-title {
+    font-size: 1.6rem;
+  }
+  
+  .legal-section-title {
+    font-size: 1.2rem;
+  }
+  
+  .legal-requisites-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .legal-requisites-label {
+    min-width: auto;
+  }
+  
+  .consent-form {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .legal-title {
+    font-size: 1.4rem;
+  }
+  
+  .legal-section-title {
+    font-size: 1.1rem;
+  }
+  
+  .legal-text {
+    font-size: 0.9rem;
+  }
+  
+  .legal-table {
+    font-size: 0.8rem;
+  }
+  
+  .legal-table th,
+  .legal-table td {
+    padding: 8px 10px;
+  }
+  
+  .consent-form-actions {
+    flex-direction: column;
+  }
+  
+  .consent-form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ===== МОБИЛЬНАЯ ВЕРСИЯ ПРАВОВЫХ СТРАНИЦ ===== */
+
+@media (max-width: 768px) {
+  .legal-container {
+    padding: 24px 20px;
+  }
+  
+  .legal-header {
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+  }
+  
+  .legal-title {
+    font-size: 1.6rem;
+    line-height: 1.3;
+  }
+  
+  .legal-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .legal-updated {
+    font-size: 0.8rem;
+    padding: 5px 12px;
+  }
+  
+  .legal-section {
+    margin-bottom: 24px;
+  }
+  
+  .legal-section-title {
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+  }
+  
+  .legal-section-number {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 0.9rem;
+    margin-right: 10px;
+  }
+  
+  .legal-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  .legal-text p {
+    margin-bottom: 10px;
+  }
+  
+  .legal-text ul,
+  .legal-text ol {
+    padding-left: 20px;
+    margin: 10px 0;
+  }
+  
+  .legal-text li {
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+  }
+  
+  /* Таблицы — горизонтальная прокрутка */
+  .legal-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .legal-table th,
+  .legal-table td {
+    padding: 10px 12px;
+  }
+  
+  /* Реквизиты */
+  .legal-requisites {
+    padding: 18px;
+    margin: 16px 0;
+  }
+  
+  .legal-requisites-title {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+  
+  .legal-requisites-row {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+  }
+  
+  .legal-requisites-label {
+    min-width: auto;
+    font-size: 0.82rem;
+  }
+  
+  .legal-requisites-value {
+    font-size: 0.9rem;
+    word-break: break-word;
+  }
+  
+  /* Форма согласия */
+  .consent-form {
+    padding: 20px;
+    margin-top: 20px;
+  }
+  
+  .consent-form-title {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+  
+  .consent-checkbox {
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  
+  .consent-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .consent-checkbox-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  
+  .consent-form-actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .consent-form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Дисклеймер-блоки */
+  .disclaimer-box {
+    padding: 18px;
+    margin: 18px 0;
+  }
+  
+  .disclaimer-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  
+  .disclaimer-text {
+    font-size: 0.88rem;
+  }
+  
+  /* Кнопка назад */
+  .legal-back-link {
+    width: 100%;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .legal-container {
+    padding: 18px 14px;
+  }
+  
+  .legal-header {
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+  }
+  
+  .legal-title {
+    font-size: 1.35rem;
+  }
+  
+  .legal-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .legal-updated {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    margin-top: 10px;
+  }
+  
+  .legal-section {
+    margin-bottom: 20px;
+  }
+  
+  .legal-section-title {
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+  }
+  
+  .legal-section-number {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 0.8rem;
+    margin-right: 8px;
+  }
+  
+  .legal-text {
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  
+  .legal-text ul,
+  .legal-text ol {
+    padding-left: 18px;
+  }
+  
+  .legal-text li {
+    font-size: 0.83rem;
+    margin-bottom: 5px;
+  }
+  
+  .legal-table {
+    font-size: 0.78rem;
+  }
+  
+  .legal-table th,
+  .legal-table td {
+    padding: 8px 10px;
+  }
+  
+  .legal-requisites {
+    padding: 14px;
+  }
+  
+  .legal-requisites-label {
+    font-size: 0.78rem;
+  }
+  
+  .legal-requisites-value {
+    font-size: 0.85rem;
+  }
+  
+  .consent-form {
+    padding: 16px;
+  }
+  
+  .consent-form-title {
+    font-size: 1rem;
+  }
+  
+  .consent-checkbox {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .consent-checkbox-text {
+    font-size: 0.82rem;
+  }
+  
+  .disclaimer-box {
+    padding: 14px;
+    margin: 14px 0;
+  }
+  
+  .disclaimer-title {
+    font-size: 0.95rem;
+  }
+  
+  .disclaimer-text {
+    font-size: 0.83rem;
+  }
+  
+  .legal-back-link {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+  }
+}

@@ -1,0 +1,145 @@
+{% load static %}
+<!-- Страница: Политика использования cookies -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика использования cookies — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-legal.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        
+        <header class="form-header">
+            <div class="form-header-content">
+                <a href="{% url 'home' %}" class="back-button">
+                    <span class="back-arrow">←</span>
+                    <span>На главную</span>
+                </a>
+                <div class="form-header-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="form-header-logo-img">
+                    <span class="form-header-logo-text">ВетОракул</span>
+                </div>
+                <div class="form-header-spacer"></div>
+            </div>
+        </header>
+
+        <main class="form-main">
+            <div class="form-container legal-container">
+                
+                <div class="legal-header">
+                    <h1 class="legal-title">Политика использования файлов cookies</h1>
+                    <p class="legal-subtitle">Как мы используем cookies и аналогичные технологии</p>
+                    <span class="legal-updated"> Актуально с 05.10.2026</span>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">1</span>Что такое cookies</h2>
+                    <div class="legal-text">
+                        <p>Cookies — это небольшие текстовые файлы, которые сохраняются на вашем устройстве (компьютере, смартфоне, планшете) при посещении сайта. Они позволяют сайту запомнить ваши действия и настройки (например, язык, размер шрифта и другие параметры отображения) на определённый период времени.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">2</span>Какие cookies мы используем</h2>
+                    <div class="legal-text">
+                        <table class="legal-table">
+                            <thead>
+                                <tr>
+                                    <th>Тип cookies</th>
+                                    <th>Цель использования</th>
+                                    <th>Срок хранения</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Необходимые</strong></td>
+                                    <td>Обеспечение базовой функциональности сайта (авторизация, безопасность, сохранение настроек)</td>
+                                    <td>Сессия / до 1 года</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Функциональные</strong></td>
+                                    <td>Запоминание ваших предпочтений (язык, регион, тема оформления)</td>
+                                    <td>До 1 года</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Аналитические</strong></td>
+                                    <td>Сбор обезличенных данных о посещаемости для улучшения сервиса (Яндекс.Метрика)</td>
+                                    <td>До 1 года</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">3</span>Как управлять cookies</h2>
+                    <div class="legal-text">
+                        <p>Вы можете управлять файлами cookies в настройках вашего браузера:</p>
+                        <ul>
+                            <li><strong>Google Chrome:</strong> Настройки → Конфиденциальность и безопасность → Файлы cookies</li>
+                            <li><strong>Яндекс.Браузер:</strong> Настройки → Сайты → Файлы cookies</li>
+                            <li><strong>Mozilla Firefox:</strong> Настройки → Приватность и защита</li>
+                            <li><strong>Safari:</strong> Настройки → Конфиденциальность</li>
+                        </ul>
+                        <p>Обратите внимание: отключение необходимых cookies может привести к некорректной работе сервиса.</p>
+                        <p>По всем вопросам, связанным с использованием cookies, обращайтесь: <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a>.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">4</span>Согласие на использование cookies</h2>
+                    <div class="legal-text">
+                        <p>Продолжая использовать сайт «ВетОракул», вы выражаете согласие на использование файлов cookies в соответствии с настоящей Политикой. Если вы не согласны с использованием cookies, пожалуйста, настройте ваш браузер соответствующим образом или воздержитесь от использования сайта.</p>
+                    </div>
+                </div>
+
+                <a href="{% url 'home' %}" class="legal-back-link">← Вернуться на главную</a>
+            </div>
+        </main>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="footer-logo-img">
+                    <span>ВетОракул</span>
+                </div>
+                <p class="footer-copy">© 2026 ИП Курындина А.С.
+    ИНН 772607929584 · ОГРНИП 323774600350046</p>
+            </div>
+            <div class="footer-col">
+                <h4>Документы</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'privacy' %}">Политика ПДн</a></li>
+                    <li><a href="{% url 'terms' %}">Пользовательское соглашение</a></li>
+                    <li><a href="{% url 'offer' %}">Публичная оферта</a></li>
+                    <li><a href="{% url 'cookies' %}">Политика cookies</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Информация</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'disclaimer' %}">Важная информация</a></li>
+                    <li><a href="{% url 'consent' %}">Согласие на обработку ПДн</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <ul class="footer-links">
+                    <li><a href="tel:+79851224241"><span class="contact-icon">📞</span>+7 (985) 122-42-41</a></li>
+                    <li><a href="mailto:vetoracul@yandex.ru"><span class="contact-icon">✉️</span>vetoracul@yandex.ru</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Все права защищены
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+{% extends 'base_app.html' %}
+{% block title %}Профиль ветеринара — ВетОракул{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>⚙️ Параметры профиля</h1>
+        <p class="page-subtitle">Личные и профессиональные данные</p>
+    </div>
+</div>
+
+<div class="settings-container">
+
+    <!-- ===== ЛИЧНЫЕ ДАННЫЕ ===== -->
+    <div class="settings-block">
+        <div class="settings-block-header">
+            <h2 class="settings-block-title">Личные данные</h2>
+            <p class="settings-block-subtitle">Основная информация о вас</p>
+        </div>
+
+        <div class="settings-card">
+            <form method="post" enctype="multipart/form-data" id="vetProfileForm">
+                {% csrf_token %}
+
+                <div class="profile-avatar-section">
+                    <div class="profile-avatar" id="vetAvatarPreview" style="overflow:hidden;padding:0;">
+                        {% if user.photo %}
+                            <img src="{{ user.photo.url }}" alt="avatar"
+                                 style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        {% else %}
+                            {{ user.get_full_name|default:user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="profile-avatar-info">
+                        <h3 class="profile-name">{{ user.get_full_name|default:user.username }}</h3>
+                        <p class="profile-role">{{ user.get_role_display }}</p>
+                        <div class="profile-avatar-actions">
+                            <input type="file" id="vetPhotoInput" name="photo" accept="image/*"
+                                   style="display:none;" onchange="previewVetPhoto(event)">
+                            <button type="button" class="btn btn-secondary btn-sm"
+                                    onclick="document.getElementById('vetPhotoInput').click()">
+                                Изменить фото
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Имя</label>
+                        {{ user_form.first_name }}
+                        {% if user_form.first_name.errors %}<p class="form-hint error">{{ user_form.first_name.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Фамилия</label>
+                        {{ user_form.last_name }}
+                        {% if user_form.last_name.errors %}<p class="form-hint error">{{ user_form.last_name.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Отчество</label>
+                        {{ user_form.middle_name }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        {{ user_form.email }}
+                        {% if user_form.email.errors %}<p class="form-hint error">{{ user_form.email.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Телефон</label>
+                        {{ user_form.phone }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Город</label>
+                        {{ user_form.city }}
+                    </div>
+                </div>
+
+                <!-- ===== ПРОФЕССИОНАЛЬНЫЕ ДАННЫЕ ===== -->
+                <div class="settings-block-header" style="margin-top:28px;">
+                    <h2 class="settings-block-title">Профессиональные данные</h2>
+                    <p class="settings-block-subtitle">Проверяются администратором</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Специализация</label>
+                        {{ profile_form.specialization }}
+                        {% if profile_form.specialization.errors %}<p class="form-hint error">{{ profile_form.specialization.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Стаж работы (лет)</label>
+                        {{ profile_form.experience }}
+                        {% if profile_form.experience.errors %}<p class="form-hint error">{{ profile_form.experience.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Образование (вуз)</label>
+                        {{ profile_form.education }}
+                        {% if profile_form.education.errors %}<p class="form-hint error">{{ profile_form.education.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Год окончания</label>
+                        {{ profile_form.grad_year }}
+                        {% if profile_form.grad_year.errors %}<p class="form-hint error">{{ profile_form.grad_year.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Номер лицензии</label>
+                        {{ profile_form.license_number }}
+                        {% if profile_form.license_number.errors %}<p class="form-hint error">{{ profile_form.license_number.errors }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Место работы</label>
+                        {{ profile_form.clinic }}
+                        {% if profile_form.clinic.errors %}<p class="form-hint error">{{ profile_form.clinic.errors }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== БЕЗОПАСНОСТЬ ===== -->
+    <div class="settings-block">
+        <div class="settings-block-header">
+            <h2 class="settings-block-title">Безопасность</h2>
+            <p class="settings-block-subtitle">Защитите свой аккаунт</p>
+        </div>
+        <div class="settings-card">
+            <div class="password-change-block">
+                <div class="password-change-info">
+                    <div class="password-change-icon">🔐</div>
+                    <div class="password-change-text">
+                        <h3 class="password-change-title">Сменить пароль</h3>
+                        <p class="password-change-desc">Рекомендуем менять пароль каждые 3 месяца</p>
+                    </div>
+                </div>
+                <a href="{% url 'password_reset' %}" class="btn btn-change-password">
+                    <span>Сменить пароль</span><span class="btn-arrow">→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function previewVetPhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const preview = document.getElementById('vetAvatarPreview');
+        preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+{% endblock %}

@@ -480,3 +480,43 @@ class ResendCodeByEmailForm(forms.Form):
             raise forms.ValidationError('Активный аккаунт с таким email не найден или уже подтверждён.')
         self.user = user
         return email
+    
+
+# =========================================================
+# Профиль ветеринара (User + VetProfile)
+# =========================================================
+class VetUserForm(forms.ModelForm):
+    """Личные данные ветеринара (модель User)."""
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'middle_name', 'email', 'phone', 'city', 'photo')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == 'photo':
+                continue
+            field.widget.attrs.update({'class': 'form-input'})
+        self.fields['photo'].required = False
+        self.fields['middle_name'].required = False
+        self.fields['city'].required = False
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Этот email уже занят.')
+        return email
+
+
+class VetProfileInfoForm(forms.ModelForm):
+    """Профессиональные данные ветеринара (модель VetProfile)."""
+    class Meta:
+        model = VetProfile
+        fields = (
+            'specialization', 'education', 'grad_year',
+            'license_number', 'experience', 'clinic',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_input_classes(self.fields, select_fields={'specialization'})

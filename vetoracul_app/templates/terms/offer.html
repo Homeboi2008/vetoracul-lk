@@ -1,0 +1,200 @@
+{% load static %}
+<!-- Страница: Публичная оферта на оказание услуг по подписке -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Публичная оферта — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-legal.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        
+        <header class="form-header">
+            <div class="form-header-content">
+                <a href="{% url 'home' %}" class="back-button">
+                    <span class="back-arrow">←</span>
+                    <span>На главную</span>
+                </a>
+                <div class="form-header-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="form-header-logo-img">
+                    <span class="form-header-logo-text">ВетОракул</span>
+                </div>
+                <div class="form-header-spacer"></div>
+            </div>
+        </header>
+
+        <main class="form-main">
+            <div class="form-container legal-container">
+                
+                <div class="legal-header">
+                    <h1 class="legal-title">Публичная оферта на оказание услуг по подписке</h1>
+                    <p class="legal-subtitle">Договор между ИП Курындиной А.С. и Пользователем сервиса «ВетОракул»</p>
+                    <span class="legal-updated">📅 Актуально с 05.10.2026</span>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">1</span>Общие положения</h2>
+                    <div class="legal-text">
+                        <p>1.1. Настоящий документ является официальным предложением (публичной офертой) Индивидуального предпринимателя Курындиной Анастасии Сергеевны, ИНН 772607929584, ОГРНИП 323774600350046 (далее — <strong>Исполнитель</strong>), заключить договор на оказание услуг по подписке на сервис «ВетОракул» (далее — <strong>Договор</strong>) на изложенных ниже условиях.</p>
+                        <p>1.2. В соответствии с п. 2 ст. 437 ГК РФ, если условия настоящего Договора принимаются Пользователем в полном объёме, он обязан совершить акцепт оферты — оплатить подписку.</p>
+                        <p>1.3. Моментом заключения Договора (акцептом оферты) считается момент поступления денежных средств на расчётный счёт Исполнителя.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">2</span>Предмет договора</h2>
+                    <div class="legal-text">
+                        <p>2.1. Исполнитель обязуется предоставить Пользователю доступ к сервису «ВетОракул» — веб-приложению для ведения медицинских карточек животных, записи на приём и хранения ветеринарных документов, а Пользователь обязуется оплатить эти услуги.</p>
+                        <p>2.2. Состав услуг зависит от выбранного тарифа подписки и указан на странице тарифов сервиса.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">3</span>Тарифы и порядок оплаты</h2>
+                    <div class="legal-text">
+                        <p>3.1. Стоимость подписки указана на странице тарифов сервиса и может быть изменена Исполнителем в одностороннем порядке с уведомлением Пользователя не менее чем за 30 дней до изменения.</p>
+                        <p>3.2. Оплата производится в российских рублях через платёжный агрегатор ЮKassa, в том числе через Систему быстрых платежей (СБП).</p>
+                        <p>3.3. Подписка оплачивается авансом за выбранный период (месяц / год).</p>
+                        <p>3.4. При автопродлении подписки денежные средства списываются автоматически. Пользователь может отключить автопродление в личном кабинете.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">4</span>Права и обязанности сторон</h2>
+                    <div class="legal-text">
+                        <p><strong>Исполнитель обязуется:</strong></p>
+                        <ul>
+                            <li>Предоставить Пользователю доступ к функционалу сервиса в соответствии с выбранным тарифом;</li>
+                            <li>Обеспечивать хранение данных Пользователя на серверах, расположенных на территории РФ;</li>
+                            <li>Обеспечивать конфиденциальность персональных данных в соответствии с 152-ФЗ;</li>
+                            <li>Направлять Пользователю чеки об оплате в соответствии с 54-ФЗ.</li>
+                        </ul>
+                        <p><strong>Пользователь обязуется:</strong></p>
+                        <ul>
+                            <li>Своевременно оплачивать услуги по подписке;</li>
+                            <li>Использовать сервис в соответствии с его назначением и настоящим Договором;</li>
+                            <li>Не передавать доступ к аккаунту третьим лицам.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">5</span>Расторжение договора и возврат средств</h2>
+                    <div class="legal-text">
+                        <p>5.1. Пользователь вправе расторгнуть Договор в любое время путём отказа от подписки в личном кабинете.</p>
+                        <p>5.2. При расторжении Договора по инициативе Пользователя возврат денежных средств производится пропорционально неиспользованному периоду подписки, за вычетом фактически понесённых Исполнителем расходов (ст. 32 Закона РФ «О защите прав потребителей»).</p>
+                        <p>5.3. Возврат осуществляется в течение 10 рабочих дней с момента получения заявления на возврат на электронную почту Исполнителя: <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a>.</p>
+                        <p>5.4. Исполнитель вправе расторгнуть Договор в одностороннем порядке в случае грубого нарушения Пользователем условий Соглашения, с возвратом пропорциональной части оплаты.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">6</span>Ответственность сторон</h2>
+                    <div class="legal-text">
+                        <p>6.1. Исполнитель не несёт ответственности за:</p>
+                        <ul>
+                            <li>Временные сбои в работе сервиса, вызванные техническими причинами;</li>
+                            <li>Действия третьих лиц (клиник-партнёров, лабораторий);</li>
+                            <li>Достоверность информации, вводимой Пользователем.</li>
+                        </ul>
+                        <p>6.2. Исполнитель не оказывает ветеринарную помощь и не несёт ответственности за здоровье животных. Сервис является информационным инструментом.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">7</span>Реквизиты Исполнителя</h2>
+                    <div class="legal-requisites">
+                        <div class="legal-requisites-title">Исполнитель:</div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Наименование:</span>
+                            <span class="legal-requisites-value">Индивидуальный предприниматель Курындина Анастасия Сергеевна</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">ИНН:</span>
+                            <span class="legal-requisites-value">772607929584</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">ОГРНИП:</span>
+                            <span class="legal-requisites-value">323774600350046</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Юридический адрес:</span>
+                            <span class="legal-requisites-value">г. Москва</span>
+                        </div>
+                        <!-- <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Расчётный счёт:</span>
+                            <span class="legal-requisites-value">[указать номер расчётного счёта]</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Банк:</span>
+                            <span class="legal-requisites-value">[указать название банка]</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">БИК:</span>
+                            <span class="legal-requisites-value">[указать БИК банка]</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Корр. счёт:</span>
+                            <span class="legal-requisites-value">[указать корр. счёт]</span>
+                        </div> -->
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Email:</span>
+                            <span class="legal-requisites-value"><a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a></span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Телефон:</span>
+                            <span class="legal-requisites-value"><a href="tel:+79851224241">+7 (985) 122-42-41</a></span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{% url 'home' %}" class="legal-back-link">← Вернуться на главную</a>
+            </div>
+        </main>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="footer-logo-img">
+                    <span>ВетОракул</span>
+                </div>
+                <p class="footer-copy">© 2026 ИП Курындина А.С.
+    ИНН 772607929584 · ОГРНИП 323774600350046</p>
+            </div>
+            <div class="footer-col">
+                <h4>Документы</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'privacy' %}">Политика ПДн</a></li>
+                    <li><a href="{% url 'terms' %}">Пользовательское соглашение</a></li>
+                    <li><a href="{% url 'offer' %}">Публичная оферта</a></li>
+                    <li><a href="{% url 'cookies' %}">Политика cookies</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Информация</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'disclaimer' %}">Важная информация</a></li>
+                    <li><a href="{% url 'consent' %}">Согласие на обработку ПДн</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <ul class="footer-links">
+                    <li><a href="tel:+79851224241"><span class="contact-icon">📞</span>+7 (985) 122-42-41</a></li>
+                    <li><a href="mailto:vetoracul@yandex.ru"><span class="contact-icon">✉️</span>vetoracul@yandex.ru</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Все права защищены
+        </div>
+    </footer>
+</body>
+</html>

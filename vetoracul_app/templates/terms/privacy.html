@@ -1,0 +1,234 @@
+{% load static %}
+<!-- Страница: Политика обработки персональных данных -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика обработки персональных данных — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-legal.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        
+        <header class="form-header">
+            <div class="form-header-content">
+                <a href="{% url 'home' %}" class="back-button">
+                    <span class="back-arrow">←</span>
+                    <span>На главную</span>
+                </a>
+                <div class="form-header-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="form-header-logo-img">
+                    <span class="form-header-logo-text">ВетОракул</span>
+                </div>
+                <div class="form-header-spacer"></div>
+            </div>
+        </header>
+
+        <main class="form-main">
+            <div class="form-container legal-container">
+                
+                <div class="legal-header">
+                    <h1 class="legal-title">Политика обработки персональных данных</h1>
+                    <p class="legal-subtitle">Сервис «ВетОракул» — ветеринарная информационная система</p>
+                    <span class="legal-updated">📅 Актуально с 05.10.2026</span>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">1</span>Общие положения</h2>
+                    <div class="legal-text">
+                        <p>Настоящая Политика обработки персональных данных (далее — <strong>Политика</strong>) разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению их безопасности, предпринимаемые <strong>Индивидуальным предпринимателем Курындиной Анастасией Сергеевной</strong> (далее — <strong>Оператор</strong>).</p>
+                        <p>Использование сервисов сайта <strong>vetoracul.ru</strong> (далее — <strong>Сайт</strong>) означает безоговорочное согласие Пользователя с настоящей Политикой и указанными в ней условиями обработки его персональных данных. В случае несогласия с этими условиями Пользователь должен воздержаться от использования сервисов Сайта.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">2</span>Оператор персональных данных</h2>
+                    <div class="legal-requisites">
+                        <div class="legal-requisites-title">Реквизиты Оператора:</div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Полное наименование:</span>
+                            <span class="legal-requisites-value">Индивидуальный предприниматель Курындина Анастасия Сергеевна</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">ИНН:</span>
+                            <span class="legal-requisites-value">772607929584</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">ОГРНИП:</span>
+                            <span class="legal-requisites-value">323774600350046</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Юридический адрес:</span>
+                            <span class="legal-requisites-value">г. Москва</span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Email:</span>
+                            <span class="legal-requisites-value"><a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a></span>
+                        </div>
+                        <div class="legal-requisites-row">
+                            <span class="legal-requisites-label">Телефон:</span>
+                            <span class="legal-requisites-value"><a href="tel:+79851224241">+7 (985) 122-42-41</a></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">3</span>Перечень обрабатываемых персональных данных</h2>
+                    <div class="legal-text">
+                        <p>Оператор обрабатывает следующие категории персональных данных:</p>
+                        <ul>
+                            <li><strong>Общие персональные данные пользователей (клиентов):</strong> фамилия, имя, отчество; адрес электронной почты; номер телефона; город проживания.</li>
+                            <li><strong>Персональные данные ветеринарных врачей:</strong> фамилия, имя, отчество; адрес электронной почты; номер телефона; данные об образовании (вуз, год окончания); номер профессиональной лицензии/сертификата; специализация; место работы.</li>
+                            <li><strong>Данные о питомцах:</strong> кличка, вид, порода, пол, дата рождения, вес, фотография, медицинская история, диагнозы, назначения, результаты анализов.</li>
+                            <li><strong>Платёжные данные:</strong> информация об операциях (без хранения полных реквизитов карт — обработка осуществляется платёжным агрегатором ЮKassa).</li>
+                            <li><strong>Технические данные:</strong> IP-адрес, данные cookies, информация о браузере и устройстве.</li>
+                        </ul>
+                        <p><strong>Биометрические персональные данные</strong> (фотографии питомцев) <strong>не обрабатываются</strong> в целях идентификации физического лица. Фотографии используются исключительно для визуального отображения карточки питомца в интерфейсе сервиса.</p>
+                        <p><strong>Специальные категории персональных данных</strong> (состояние здоровья человека) не собираются. Медицинские данные относятся исключительно к животным и не являются персональными данными владельца в смысле ст. 10 152-ФЗ.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">4</span>Цели обработки персональных данных</h2>
+                    <div class="legal-text">
+                        <p>Персональные данные обрабатываются в следующих целях:</p>
+                        <ol>
+                            <li>Идентификация пользователя при регистрации и авторизации на Сайте.</li>
+                            <li>Предоставление пользователю доступа к функциональным возможностям Сайта (ведение карточек питомцев, история посещений, запись на приём).</li>
+                            <li>Заключение и исполнение договора на оказание услуг по подписке (оферты).</li>
+                            <li>Обработка платежей через платёжного агрегатора ЮKassa.</li>
+                            <li>Направление пользователям информационных и рекламных сообщений (email-рассылка, push-уведомления в сервисе) — при наличии отдельного согласия.</li>
+                            <li>Передача данных ветеринарным клиникам-партнёрам для организации приёма — при наличии согласия пользователя.</li>
+                            <li>Передача данных в лабораторию для проведения анализов — при наличии согласия пользователя.</li>
+                            <li>Улучшение качества сервиса, техническая поддержка, анализ использования сервиса.</li>
+                            <li>Исполнение требований законодательства РФ.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">5</span>Правовые основания обработки</h2>
+                    <div class="legal-text">
+                        <p>Правовыми основаниями обработки персональных данных являются:</p>
+                        <ul>
+                            <li>Согласие субъекта персональных данных на обработку его персональных данных (ст. 6, ст. 9 152-ФЗ).</li>
+                            <li>Необходимость исполнения договора, стороной которого является субъект персональных данных (ст. 6 152-ФЗ).</li>
+                            <li>Необходимость исполнения требований законодательства РФ.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">6</span>Порядок и условия обработки</h2>
+                    <div class="legal-text">
+                        <p>Обработка персональных данных осуществляется с использованием средств автоматизации и без таковых. Оператор принимает необходимые правовые, организационные и технические меры для защиты персональных данных от неправомерного или случайного доступа, уничтожения, изменения, блокирования, копирования, распространения.</p>
+                        <p><strong>Хранение данных:</strong> персональные данные хранятся на серверах, расположенных на территории Российской Федерации. Трансграничная передача персональных данных не осуществляется.</p>
+                        <p><strong>Срок обработки:</strong> персональные данные обрабатываются в течение всего срока действия подписки пользователя, а также в течение 5 лет после прекращения действия подписки — в соответствии с требованиями законодательства о бухгалтерском учёте (Федеральный закон от 06.12.2011 № 402-ФЗ).</p>
+                        <p>После истечения указанного срока персональные данные подлежат уничтожению, если иное не предусмотрено законодательством РФ.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">7</span>Передача персональных данных третьим лицам</h2>
+                    <div class="legal-text">
+                        <p>Оператор вправе передавать персональные данные третьим лицам в следующих случаях:</p>
+                        <ul>
+                            <li><strong>Платёжный агрегатор ЮKassa (ООО «ЮКасса»)</strong> — для обработки платежей. Передаются: ФИО, email, телефон, сумма и назначение платежа.</li>
+                            <li><strong>Ветеринарные клиники-партнёры</strong> — для организации приёма питомца. Передаются: ФИО владельца, телефон, email, данные питомца, причина обращения. Передача осуществляется только при наличии явного согласия пользователя в момент записи на приём.</li>
+                            <li><strong>Ветеринарные лаборатории</strong> — для проведения анализов. Передаются: данные питомца, назначение врача. Передача осуществляется только при наличии явного согласия пользователя.</li>
+                            <li><strong>Уполномоченные государственные органы</strong> — в случаях, предусмотренных законодательством РФ.</li>
+                        </ul>
+                        <p>Оператор не передаёт персональные данные иным третьим лицам без согласия субъекта персональных данных, за исключением случаев, предусмотренных законодательством РФ.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">8</span>Права субъекта персональных данных</h2>
+                    <div class="legal-text">
+                        <p>Пользователь вправе:</p>
+                        <ul>
+                            <li>Получать сведения об обработке своих персональных данных (ст. 14 152-ФЗ).</li>
+                            <li>Требовать уточнения, блокирования или уничтожения персональных данных в случае, если они являются неполными, устаревшими, неточными (ст. 14 152-ФЗ).</li>
+                            <li>Отозвать согласие на обработку персональных данных путём направления письменного уведомления Оператору на email: <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a>.</li>
+                            <li>Требовать прекращения обработки и удаления персональных данных путём удаления аккаунта в разделе «Параметры» личного кабинета.</li>
+                            <li>Обжаловать действия или бездействие Оператора в Роскомнадзор или в судебном порядке.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">9</span>Файлы cookies и метрики</h2>
+                    <div class="legal-text">
+                        <p>Сайт использует файлы cookies для обеспечения корректной работы сервиса, сохранения настроек пользователя и анализа посещаемости. Продолжая использовать Сайт, Пользователь выражает согласие на использование cookies.</p>
+                        <p>На Сайте могут использоваться системы веб-аналитики (например, Яндекс.Метрика) для сбора обезличенных данных о посещаемости. Пользователь может отключить cookies в настройках браузера.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">10</span>Изменение Политики</h2>
+                    <div class="legal-text">
+                        <p>Оператор вправе вносить изменения в настоящую Политику. Новая редакция Политики вступает в силу с момента её размещения на Сайте, если иное не предусмотрено новой редакцией. Пользователь обязуется самостоятельно следить за актуальной версией Политики.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">11</span>Контактная информация</h2>
+                    <div class="legal-text">
+                        <p>По всем вопросам, связанным с обработкой персональных данных, обращайтесь:</p>
+                        <ul>
+                            <li>Email: <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a></li>
+                            <li>Телефон: <a href="tel:+79851224241">+7 (985) 122-42-41</a></li>
+                            <li>Почтовый адрес: г. Москва</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <a href="{% url 'home' %}" class="legal-back-link">← Вернуться на главную</a>
+            </div>
+        </main>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="footer-logo-img">
+                    <span>ВетОракул</span>
+                </div>
+                <p class="footer-copy">© 2026 ИП Курындина А.С.
+    ИНН 772607929584 · ОГРНИП 323774600350046</p>
+            </div>
+            <div class="footer-col">
+                <h4>Документы</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'privacy' %}">Политика ПДн</a></li>
+                    <li><a href="{% url 'terms' %}">Пользовательское соглашение</a></li>
+                    <li><a href="{% url 'offer' %}">Публичная оферта</a></li>
+                    <li><a href="{% url 'cookies' %}">Политика cookies</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Информация</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'disclaimer' %}">Важная информация</a></li>
+                    <li><a href="{% url 'consent' %}">Согласие на обработку ПДн</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <ul class="footer-links">
+                    <li><a href="tel:+79851224241"><span class="contact-icon">📞</span>+7 (985) 122-42-41</a></li>
+                    <li><a href="mailto:vetoracul@yandex.ru"><span class="contact-icon">✉️</span>vetoracul@yandex.ru</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Все права защищены
+        </div>
+    </footer>
+</body>
+</html>

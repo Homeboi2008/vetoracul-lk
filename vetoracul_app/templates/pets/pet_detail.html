@@ -44,11 +44,18 @@
             </div>
         </div>
 
-        <div class="pet-view-actions-inline">
+        <div class="pet-view-actions-inline" {% if user.is_staff %}style="flex-direction: column"{% endif %}>
+            {% if user.is_staff %}
+                <a href="{% url 'pet_export_pdf' pet.pk %}"
+                class="btn btn-primary"
+                title="Скачать полную карточку в PDF">
+                    📄 Скачать PDF
+                </a>
+            {% endif %}
             {% if can_edit %}
                 <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-secondary">✏️ Редактировать</a>
             {% endif %}
-            {% if pet.owner == user %}
+            {% if pet.owner == user or user.is_staff %}
                 <a href="{% url 'pet_delete' pet.pk %}" class="btn btn-outline" style="color:#dc2626;border-color:#dc2626;">🗑 Удалить</a>
             {% endif %}
         </div>
@@ -87,6 +94,44 @@
             {% endif %}
         </div>
     </div>
+    <!-- ===== ВЕТЕРИНАРЫ С ДОСТУПОМ ===== -->
+    <!-- {% if vet_accesses %}
+        <div class="pet-view-section">
+            <h2 class="pet-view-section-title">🩺 Ветеринары с доступом</h2>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                {% for access in vet_accesses %}
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:#f5f0ff;border-radius:12px;border:1px solid var(--color-border);">
+                        <div style="min-width:0;">
+                            <div style="font-weight:600;color:#2d1b4e;font-size:0.95rem;">
+                                {{ access.vet.get_full_name|default:access.vet.username }}
+                            </div>
+                            <div style="font-size:0.8rem;color:#6b5b8a;margin-top:2px;">
+                                {{ access.vet.vet_profile.get_specialization_display|default:"" }}
+                                {% if access.vet.vet_profile.clinic %}
+                                    · {{ access.vet.vet_profile.clinic }}
+                                {% endif %}
+                            </div>
+                            <div style="font-size:0.75rem;color:#8a7fa8;margin-top:3px;">
+                                Уровень: <strong>{{ access.get_access_level_display }}</strong>
+                                · выдан {{ access.granted_at|date:"d.m.Y" }}
+                            </div>
+                        </div>
+                        <form method="post"
+                            action="{% url 'vet_access_revoke' access.pk %}"
+                            style="margin:0;flex-shrink:0;">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-outline"
+                                    style="color:#dc2626;border-color:#dc2626;padding:6px 12px;font-size:0.8rem;"
+                                    onclick="return confirm('Отозвать доступ у {{ access.vet.get_full_name|default:access.vet.username|escapejs }}?');">
+                                Отозвать
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %} -->
 
     <!-- ===== ДИАГНОЗЫ ===== -->
     <div class="pet-view-section">

@@ -1,0 +1,182 @@
+{% load static %}
+<!-- Страница: Пользовательское соглашение -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пользовательское соглашение — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-legal.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        
+        <header class="form-header">
+            <div class="form-header-content">
+                <a href="{% url 'home' %}" class="back-button">
+                    <span class="back-arrow">←</span>
+                    <span>На главную</span>
+                </a>
+                <div class="form-header-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="form-header-logo-img">
+                    <span class="form-header-logo-text">ВетОракул</span>
+                </div>
+                <div class="form-header-spacer"></div>
+            </div>
+        </header>
+
+        <main class="form-main">
+            <div class="form-container legal-container">
+                
+                <div class="legal-header">
+                    <h1 class="legal-title">Пользовательское соглашение</h1>
+                    <p class="legal-subtitle">Правила использования сервиса «ВетОракул»</p>
+                    <span class="legal-updated"> Актуально с 05.10.2026</span>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">1</span>Термины и определения</h2>
+                    <div class="legal-text">
+                        <p><strong>Сервис «ВетОракул»</strong> — веб-приложение, расположенное по адресу vetoracul.ru, предназначенное для ведения медицинских карточек домашних животных, записи на приём к ветеринарному врачу и хранения ветеринарных документов.</p>
+                        <p><strong>Администрация</strong> — Индивидуальный предприниматель Курындина Анастасия Сергеевна, ИНН 772607929584, ОГРНИП 323774600350046, осуществляющая управление Сервисом. Контактный email: <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a>.</p>
+                        <p><strong>Пользователь (Клиент)</strong> — физическое лицо, зарегистрировавшееся в Сервисе в качестве владельца животного.</p>
+                        <p><strong>Ветеринарный врач</strong> — физическое лицо, зарегистрировавшееся в Сервисе в качестве специалиста и прошедшее верификацию.</p>
+                        <p><strong>Подписка</strong> — платная услуга по хранению данных и предоставлению доступа к расширенному функционалу Сервиса.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">2</span>Предмет соглашения</h2>
+                    <div class="legal-text">
+                        <p>Настоящее Пользовательское соглашение (далее — <strong>Соглашение</strong>) регулирует отношения между Администрацией и Пользователем по поводу использования Сервиса «ВетОракул».</p>
+                        <p>Используя Сервис, Пользователь подтверждает, что ознакомился с настоящим Соглашением, понимает его и принимает его условия в полном объёме.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">3</span>Регистрация и аккаунт</h2>
+                    <div class="legal-text">
+                        <p>3.1. Для использования Сервиса Пользователь обязан пройти процедуру регистрации, указав достоверные данные.</p>
+                        <p>3.2. Пользователь несёт ответственность за сохранность своих учётных данных (логина и пароля).</p>
+                        <p>3.3. Запрещается:</p>
+                        <ul>
+                            <li>Регистрация более одного аккаунта без согласия Администрации;</li>
+                            <li>Передача учётных данных третьим лицам;</li>
+                            <li>Регистрация под чужим именем или с использованием недостоверных данных;</li>
+                            <li>Использование Сервиса лицами младше 14 лет без согласия законных представителей.</li>
+                        </ul>
+                        <p>3.4. Администрация вправе заблокировать аккаунт Пользователя в случае нарушения настоящего Соглашения.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">4</span>Права и обязанности Пользователя</h2>
+                    <div class="legal-text">
+                        <p><strong>Пользователь вправе:</strong></p>
+                        <ul>
+                            <li>Использовать функционал Сервиса в соответствии с выбранным тарифом подписки;</li>
+                            <li>Создавать и редактировать карточки питомцев;</li>
+                            <li>Записываться на приём к ветеринарным врачам;</li>
+                            <li>Загружать и хранить ветеринарные документы;</li>
+                            <li>Получать техническую поддержку;</li>
+                            <li>Удалить свой аккаунт и все связанные с ним данные в любое время.</li>
+                        </ul>
+                        <p><strong>Пользователь обязан:</strong></p>
+                        <ul>
+                            <li>Предоставлять достоверную информацию при регистрации и использовании Сервиса;</li>
+                            <li>Не нарушать работоспособность Сервиса;</li>
+                            <li>Не использовать Сервис в незаконных целях;</li>
+                            <li>Не распространять через Сервис вредоносное ПО, спам, запрещённый контент;</li>
+                            <li>Своевременно оплачивать услуги по подписке.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">5</span>Интеллектуальная собственность</h2>
+                    <div class="legal-text">
+                        <p>Все материалы Сервиса (дизайн, тексты, программный код, логотипы) являются объектами интеллектуальной собственности Администрации и охраняются законодательством РФ.</p>
+                        <p>Пользователь сохраняет права на контент, загружаемый в Сервис (фотографии питомцев, документы). Загружая контент, Пользователь предоставляет Администрации неисключительную лицензию на его хранение и отображение в интерфейсе Сервиса в целях исполнения договора.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">6</span>Ограничение ответственности</h2>
+                    <div class="legal-text">
+                        <p>6.1. Сервис предоставляется «как есть» (as is). Администрация не гарантирует бесперебойную работу Сервиса.</p>
+                        <p>6.2. Администрация не несёт ответственности за:</p>
+                        <ul>
+                            <li>Достоверность информации, размещаемой Пользователями;</li>
+                            <li>Результаты ветеринарного лечения — Сервис является инструментом хранения данных и не заменяет очный приём врача;</li>
+                            <li>Действия ветеринарных клиник-партнёров;</li>
+                            <li>Убытки, возникшие вследствие использования или невозможности использования Сервиса.</li>
+                        </ul>
+                        <p>6.3. Ответственность Администрации ограничивается стоимостью подписки Пользователя за последний оплаченный период.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">7</span>Изменение и расторжение Соглашения</h2>
+                    <div class="legal-text">
+                        <p>7.1. Администрация вправе в одностороннем порядке изменять условия настоящего Соглашения. Изменения вступают в силу с момента их публикации на Сайте.</p>
+                        <p>7.2. Пользователь вправе расторгнуть Соглашение в любое время путём удаления аккаунта.</p>
+                        <p>7.3. Администрация вправе заблокировать аккаунт Пользователя в случае грубого нарушения Соглашения.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">8</span>Применимое право и разрешение споров</h2>
+                    <div class="legal-text">
+                        <p>8.1. Настоящее Соглашение регулируется законодательством Российской Федерации.</p>
+                        <p>8.2. Все споры решаются путём переговоров. При недостижении согласия — в судебном порядке по месту нахождения Администрации (г. Москва).</p>
+                    </div>
+                </div>
+
+                <a href="{% url 'home' %}" class="legal-back-link">← Вернуться на главную</a>
+            </div>
+        </main>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="footer-logo-img">
+                    <span>ВетОракул</span>
+                </div>
+                <p class="footer-copy">© 2026 ИП Курындина А.С.
+    ИНН 772607929584 · ОГРНИП 323774600350046</p>
+            </div>
+            <div class="footer-col">
+                <h4>Документы</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'privacy' %}">Политика ПДн</a></li>
+                    <li><a href="{% url 'terms' %}">Пользовательское соглашение</a></li>
+                    <li><a href="{% url 'offer' %}">Публичная оферта</a></li>
+                    <li><a href="{% url 'cookies' %}">Политика cookies</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Информация</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'disclaimer' %}">Важная информация</a></li>
+                    <li><a href="{% url 'consent' %}">Согласие на обработку ПДн</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <ul class="footer-links">
+                    <li><a href="tel:+79851224241"><span class="contact-icon">📞</span>+7 (985) 122-42-41</a></li>
+                    <li><a href="mailto:vetoracul@yandex.ru"><span class="contact-icon">✉️</span>vetoracul@yandex.ru</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Все права защищены
+        </div>
+    </footer>
+</body>
+</html>

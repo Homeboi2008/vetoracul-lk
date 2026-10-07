@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vetoracul_app', '0005_remove_user_notify_news'),
+        ('vetoracul_app', '0004_user_notify_email'),
     ]
 
     operations = [

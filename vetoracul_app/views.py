@@ -1,6 +1,6 @@
 import logging
-logger = logging.getLogger(__name__)
-
+from pathlib import Path
+from io import BytesIO
 from datetime import timedelta
 
 from django.views.generic import TemplateView, View, CreateView, FormView, ListView, UpdateView, DeleteView, DetailView
@@ -14,11 +14,19 @@ from django.conf import settings
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.db.models import Q
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.paginator import Paginator
+
 
 from .models import Subscription, EmailVerificationCode, User, Pet, Reminder, Folder, Document, VetAccess, VetAccessRequest, VetInviteToken, VetProfile
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm, ResendCodeByEmailForm
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, CustomPasswordResetForm, CustomSetPasswordForm, VerificationCodeForm, PetForm, FolderForm, DocumentUploadForm, VetRegistrationForm, ResendCodeByEmailForm, VetProfileInfoForm, VetUserForm
+from .pdf_export import PetCardPDF
 
-from datetime import timedelta
+
+logger = logging.getLogger(__name__)
+
 
 
 def _send_pending_reminder_notifications(user=None):
@@ -153,12 +161,11 @@ class RegisterView(CreateView):
         user.is_active = False  # аккаунт не активен до подтверждения
         user.save()
         # Создаём код верификации
-        code_obj = EmailVerificationCode.objects.create(user=user)
+        code_obj = EmailVerificationCode.issue_code(user)
         # Отправляем письмо
         self.send_verification_email(user, code_obj.code)
         # Сохраняем ID пользователя в сессии для последующего подтверждения
         self.request.session['pending_user_id'] = user.id
-        messages.success(self.request, 'На ваш email отправлен код подтверждения.')
         return super().form_valid(form)
 
     def send_verification_email(self, user, code):
@@ -235,7 +242,7 @@ class VerifyEmailView(FormView):
         # Если пользователь уже активирован (например, форма отправлена повторно) —
         # просто логиним и впускаем, без падения
         if self.user.is_active:
-            self.user.backend = 'django.contrib.auth.backends.ModelBackend'
+            self.user.backend = 'vetoracul_app.backends.EmailOrUsernameBackend'
             login(request, self.user)
             request.session.pop('pending_user_id', None)
             messages.success(request, 'Email уже подтверждён. Добро пожаловать!')
@@ -257,11 +264,11 @@ class VerifyEmailView(FormView):
         EmailVerificationCode.objects.filter(user=self.user).delete()
 
         # Явно указываем backend, т.к. их несколько
-        self.user.backend = 'django.contrib.auth.backends.ModelBackend'
+        self.user.backend = 'vetoracul_app.backends.EmailOrUsernameBackend'
 
         # Логиним пользователя
         login(self.request, self.user)
-        messages.success(self.request, 'Ваш email подтверждён! Добро пожаловать.')
+        messages.success(self.request, 'Добро пожаловать!')
 
         # 🔑 Безопасно удаляем ключ сессии (не падаем, если ключа уже нет)
         self.request.session.pop('pending_user_id', None)
@@ -280,8 +287,7 @@ class ResendCodeView(View):
             request.session.pop('pending_user_id', None)
             return redirect('login')
 
-        EmailVerificationCode.objects.filter(user=user).delete()
-        new_code = EmailVerificationCode.objects.create(user=user)
+        new_code = EmailVerificationCode.issue_code(user)
         subject = 'Новый код подтверждения'
         message = f'Здравствуйте, {user.username}!\n\nВаш новый код: {new_code.code}'
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
@@ -377,37 +383,6 @@ class FolderDetailView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         ctx['subfolders'] = self.get_object().children.all()
         return ctx
 
-
-# ---------- Документы ----------
-
-class DocumentUploadView(LoginRequiredMixin, CreateView):
-    model = Document
-    form_class = DocumentUploadForm
-    template_name = 'cabinet/document_upload.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        self.pet = get_object_or_404(Pet, pk=kwargs['pet_pk'])
-        # Проверка доступа: владелец или совладелец или ветеринар
-        if not self.pet.can_edit(request.user):
-            messages.error(request, 'Нет доступа к этому питомцу.')
-            return redirect('folder_list')
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
-    def form_valid(self, form):
-        form.instance.pet = self.pet
-        form.instance.uploaded_by = self.request.user
-        messages.success(self.request, 'Документ загружен.')
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse_lazy('folder_list')
-
-
 # ---------- Корзина ----------
 
 class TrashListView(LoginRequiredMixin, ListView):
@@ -430,36 +405,48 @@ class TrashListView(LoginRequiredMixin, ListView):
 class DocumentRestoreView(LoginRequiredMixin, View):
     def post(self, request, pk):
         doc = get_object_or_404(Document, pk=pk)
+        if request.user.is_superuser:
+            doc.restore()
+            messages.success(request, 'Документ восстановлен.')
+            return redirect(reverse('home') + '#documents')    
         if not (doc.pet.owner == request.user or request.user in doc.pet.co_owners.all()):
             messages.error(request, 'Нет доступа.')
             return redirect('home')
         doc.restore()
         messages.success(request, 'Документ восстановлен.')
-        return redirect('home')
+        return redirect(reverse('home') + '#documents')
 
 
 class DocumentPermanentDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
         doc = get_object_or_404(Document, pk=pk)
+        if request.user.is_superuser:
+            doc.file.delete(save=False)
+            doc.delete()
+            messages.success(request, 'Документ удалён безвозвратно.')
+            return redirect(reverse('home') + '#documents')
         if not (doc.pet.owner == request.user or request.user in doc.pet.co_owners.all()):
             messages.error(request, 'Нет доступа.')
             return redirect('home')
         doc.file.delete(save=False)
         doc.delete()
-        messages.success(self.request, 'Документ удалён безвозвратно.')
-        return redirect('home')
+        messages.success(request, 'Документ удалён безвозвратно.')
+        return redirect(reverse('home') + '#documents')
     
 
 class DocumentSoftDeleteView(LoginRequiredMixin, View):
-    """Обычное удаление — отправка в корзину."""
     def post(self, request, pk):
         doc = get_object_or_404(Document, pk=pk)
+        if request.user.is_superuser:
+            doc.soft_delete()
+            messages.success(request, 'Документ перемещён в корзину.')
+            return redirect(reverse('home') + '#documents')    
         if not (doc.pet.owner == request.user or request.user in doc.pet.co_owners.all()):
             messages.error(request, 'Нет доступа.')
             return redirect('home')
         doc.soft_delete()
         messages.success(request, 'Документ перемещён в корзину.')
-        return redirect('home')
+        return redirect(reverse('home') + '#documents')
 
 class PetListView(LoginRequiredMixin, ListView):
     """Список питомцев пользователя (свои + где он совладелец)."""
@@ -512,6 +499,7 @@ class PetDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         ctx['documents'] = pet.documents.filter(is_deleted=False).order_by('-date')
         ctx['reminders'] = pet.reminders.order_by('date', 'time')
         ctx['can_edit'] = pet.can_edit(self.request.user)
+        ctx['vet_accesses'] = pet.vet_accesses.select_related('vet').order_by('-granted_at')
         return ctx
 
 
@@ -630,6 +618,8 @@ class DiagnosisUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Diagnosis.objects.all()
         if user.role == 'vet':
             return Diagnosis.objects.filter(vet=user)
         return Diagnosis.objects.filter(
@@ -679,6 +669,8 @@ class DiagnosisDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Diagnosis.objects.all()
         if user.role == 'vet':
             return Diagnosis.objects.all()
         return Diagnosis.objects.filter(
@@ -723,9 +715,9 @@ class DocumentCreateView(PetAccessMixin, CreateView):
         ctx['pet'] = self.pet
         ctx['title'] = 'Загрузить документ'
         return ctx
-    
+
     def get_success_url(self):
-        return reverse_lazy('home') + '#documents'
+        return reverse('home') + '#documents'
 
 
 class DocumentUpdateView(LoginRequiredMixin, UpdateView):
@@ -735,6 +727,8 @@ class DocumentUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Document.objects.filter(is_deleted=False)
         if user.role == 'vet':
             return Document.objects.filter(is_deleted=False)
         return Document.objects.filter(is_deleted=False).filter(
@@ -752,7 +746,7 @@ class DocumentUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('pet_detail', kwargs={'pk': self.object.pet.pk})
+        return reverse('home') + '#documents'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -791,6 +785,8 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Reminder.objects.all()
         if user.role == 'vet':
             return Reminder.objects.all()
         return Reminder.objects.filter(
@@ -818,6 +814,8 @@ class ReminderDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Reminder.objects.all()
         if user.role == 'vet':
             return Reminder.objects.all()
         return Reminder.objects.filter(
@@ -915,21 +913,6 @@ def home_view(request):
     profile_form = UserProfileForm(instance=user)
     notification_form = NotificationSettingsForm(instance=user)
 
-    # === Уведомления ===
-    # 1. Заявки ветеринаров на доступ к питомцам пользователя
-    pending_vet_requests = VetAccessRequest.objects.filter(
-        pet__owner=user, status='pending'
-    ).select_related('vet', 'pet').order_by('-created_at')
-
-    # 2. Прошедшие напоминания с незакрытым статусом
-    past_pending_reminders = Reminder.objects.filter(
-        pet__in=pets,
-        status=Reminder.Status.PENDING,
-        date__lt=timezone.now().date(),
-    ).select_related('pet').order_by('-date')[:20]
-
-    notifications_count = pending_vet_requests.count() + past_pending_reminders.count()
-
     upcoming_reminders = reminders.filter(
         status=Reminder.Status.PENDING,
         date__gte=timezone.now().date()
@@ -948,9 +931,6 @@ def home_view(request):
         'reminders_json': reminders_json,
         'profile_form': profile_form,
         'notification_form': notification_form,
-        'pending_vet_requests': pending_vet_requests,
-        'past_pending_reminders': past_pending_reminders,
-        'notifications_count': notifications_count,
     }
     return render(request, 'home.html', context)
 
@@ -1430,7 +1410,7 @@ def vet_register_by_token(request, token):
             invite.save(update_fields=['used_at'])
 
             # Стандартный код подтверждения email
-            code_obj = EmailVerificationCode.objects.create(user=user)
+            code_obj = EmailVerificationCode.issue_code(user)
             send_mail(
                 'Подтверждение регистрации ветеринара в ВетОракуле',
                 f'Здравствуйте, {user.first_name}!\n\n'
@@ -1506,8 +1486,7 @@ class ResendCodeByEmailView(FormView):
     def form_valid(self, form):
         user = form.user
         # Удаляем старый код и создаём новый
-        EmailVerificationCode.objects.filter(user=user).delete()
-        code_obj = EmailVerificationCode.objects.create(user=user)
+        code_obj = EmailVerificationCode.issue_code(user)
 
         send_mail(
             'Новый код подтверждения — ВетОракул',
@@ -1522,3 +1501,419 @@ class ResendCodeByEmailView(FormView):
         self.request.session['pending_user_id'] = user.id
         messages.success(self.request, 'Новый код отправлен на ваш email.')
         return super().form_valid(form)
+    
+@login_required
+def consent(request):
+    return render(request, "terms/consent.html")
+
+@login_required
+def disclaimer(request):
+    return render(request, "terms/disclaimer.html")
+
+@login_required
+def cookies(request):
+    return render(request, "terms/cookies.html")
+
+@login_required
+def offer(request):
+    return render(request, "terms/offer.html")
+
+@login_required
+def terms(request):
+    return render(request, "terms/terms.html")
+
+@login_required
+def privacy(request):
+    return render(request, "terms/privacy.html")
+
+@login_required
+def help_page(request):
+    return render(request, "help.html")
+
+def _pdf_link_callback(uri, rel):
+    """
+    xhtml2pdf вызывает это для каждого src/href.
+    Превращает /static/... и /media/... в абсолютные пути к файлам.
+    """
+    from urllib.parse import urlparse, unquote
+
+    # Отбрасываем схему и хост, если прилетел абсолютный http(s) URL
+    parsed = urlparse(uri)
+    path = unquote(parsed.path) if parsed.scheme else uri
+
+    # STATIC_URL: /static/fonts/... -> <STATICFILES_DIRS[0]>/fonts/...
+    if path.startswith(settings.STATIC_URL):
+        rel_path = path[len(settings.STATIC_URL):]
+        base = settings.STATICFILES_DIRS[0] if settings.STATICFILES_DIRS else settings.STATIC_ROOT
+        return str(Path(base) / rel_path)
+
+    # MEDIA_URL: /media/... -> <MEDIA_ROOT>/...
+    if path.startswith(settings.MEDIA_URL):
+        rel_path = path[len(settings.MEDIA_URL):]
+        return str(Path(settings.MEDIA_ROOT) / rel_path)
+
+    # Уже абсолютный путь к файлу — отдаём как есть
+    return uri
+
+
+@staff_member_required
+def pet_export_pdf(request, pk):
+    """
+    Полный экспорт карточки питомца в PDF (fpdf2).
+    Доступно только администраторам (is_staff).
+    """
+    pet = get_object_or_404(
+        Pet.objects.select_related('owner').prefetch_related(
+            'co_owner_links__user',
+            'diagnoses__vet',
+            'documents__folder',
+            'reminders__created_by',
+        ),
+        pk=pk,
+    )
+
+    diagnoses = list(pet.diagnoses.order_by('-date'))
+    documents = list(pet.documents.filter(is_deleted=False).order_by('-date'))
+    reminders = list(pet.reminders.order_by('-date', '-time'))
+    co_owners = list(pet.co_owner_links.select_related('user').all())
+
+    try:
+        pdf_bytes = PetCardPDF(
+            pet=pet,
+            diagnoses=diagnoses,
+            documents=documents,
+            reminders=reminders,
+            co_owners=co_owners,
+            generated_at=timezone.now(),
+            generated_by=request.user,
+        ).build()
+    except FileNotFoundError as e:
+        logger.error('PDF: %s', e)
+        messages.error(request, 'Шрифты для PDF не найдены. Обратитесь к администратору.')
+        return redirect(reverse('pet_detail', kwargs={'pk': pet.pk}))
+    except Exception as e:
+        logger.exception('Ошибка генерации PDF для Pet#%s: %s', pet.pk, e)
+        messages.error(request, 'Не удалось сформировать PDF.')
+        return redirect(reverse('pet_detail', kwargs={'pk': pet.pk}))
+
+    date_str = timezone.now().strftime('%Y%m%d')
+    from urllib.parse import quote
+    display_name = f'ВетОракул_карточка_{pet.name}_{date_str}.pdf'
+    ascii_name = f'vetoracul_pet_{pet.pk}_{date_str}.pdf'
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="{ascii_name}"; '
+        f"filename*=UTF-8''{quote(display_name)}"
+    )
+    return response
+
+
+
+@staff_member_required
+def admin_pets_list(request):
+    """
+    Панель администратора: список ВСЕХ питомцев всех владельцев.
+    Поиск по:
+      - кличке питомца,
+      - ФИО владельца (по словам, нестрогий порядок),
+      - email владельца,
+      - телефону владельца,
+      - username владельца,
+      - совладельцам (ФИО, email).
+    Доступно только is_staff.
+    """
+    q = (request.GET.get('q') or '').strip()
+
+    pets = (
+        Pet.objects
+        .select_related('owner')
+        .prefetch_related('co_owner_links__user')
+        .order_by('-created_at')
+    )
+
+    if q:
+        # Разбиваем запрос на слова и каждое слово обязательно должно найтись
+        # где-то среди полей. Так «Иванов Иван» найдёт владельца с фамилией
+        # Иванов и именем Иван, даже если в БД они хранятся по отдельности.
+        search_q = Q()
+        for part in q.split():
+            part_q = (
+                Q(name__icontains=part)
+                | Q(owner__first_name__icontains=part)
+                | Q(owner__last_name__icontains=part)
+                | Q(owner__middle_name__icontains=part)
+                | Q(owner__email__icontains=part)
+                | Q(owner__phone__icontains=part)
+                | Q(owner__username__icontains=part)
+                | Q(co_owners__first_name__icontains=part)
+                | Q(co_owners__last_name__icontains=part)
+                | Q(co_owners__middle_name__icontains=part)
+                | Q(co_owners__email__icontains=part)
+            )
+            search_q &= part_q
+
+        pets = pets.filter(search_q).distinct()
+
+        # Дополнительный матч по телефону без форматирования: +7 (999) 123-45-67 -> 9991234567
+        digits_only = ''.join(ch for ch in q if ch.isdigit())
+        if len(digits_only) >= 5:
+            phone_digits_qs = pets.model.objects.filter(owner__phone__regex=r'[\d]+')
+            # (осторожный матч — оставлен, но пока не активирую: сложно без annotate)
+
+    total_count = pets.count()
+
+    paginator = Paginator(pets, 30)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Соберём querystring без параметра page — для ссылок пагинации
+    qs_params = request.GET.copy()
+    qs_params.pop('page', None)
+    base_qs = qs_params.urlencode()
+
+    return render(request, 'admin_panel/pets_list.html', {
+        'page_obj': page_obj,
+        'pets': page_obj,
+        'q': q,
+        'total_count': total_count,
+        'base_qs': base_qs,
+    })
+
+
+import zipfile
+
+
+@login_required
+def documents_zip_download(request):
+    """
+    Скачать все документы пользователя одним ZIP-архивом.
+    Структура папок повторяет иерархию Folder пользователя.
+    Документы без папки — в корне архива.
+    В архив попадают все неудалённые документы всех питомцев,
+    где пользователь — владелец или совладелец.
+    """
+    user = request.user
+
+    # Питомцы пользователя (как в PetListView)
+    pets_qs = Pet.objects.filter(
+        Q(owner=user) | Q(co_owners=user)
+    ).distinct()
+
+    documents = list(
+        Document.objects
+        .filter(pet__in=pets_qs, is_deleted=False)
+        .exclude(file='')
+        .select_related('folder', 'pet')
+        .order_by('folder__name', 'date')
+    )
+
+    if not documents:
+        messages.info(request, 'У вас пока нет документов для выгрузки.')
+        return redirect(reverse('home') + '#documents')
+
+    # Все папки пользователя
+    folders = list(
+        Folder.objects.filter(owner=user).select_related('parent')
+    )
+    folders_by_id = {f.id: f for f in folders}
+
+    # Считаем путь каждой папки: список имён от корня
+    folder_path_cache = {}
+
+    def build_folder_path(folder):
+        if folder.id in folder_path_cache:
+            return folder_path_cache[folder.id]
+
+        # Защита от случайного цикла
+        seen = set()
+        chain = []
+        cur = folder
+        while cur is not None and cur.id not in seen:
+            seen.add(cur.id)
+            chain.append(cur.name)
+            cur = cur.parent
+
+        path = list(reversed(chain))
+        folder_path_cache[folder.id] = path
+        return path
+
+    # Готовим ZIP
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
+
+        # 1. Все папки пользователя — даже пустые, чтобы структура сохранилась
+        for folder in folders:
+            path = build_folder_path(folder)
+            archive_dir = '/'.join(path) + '/'
+            # writestr с завершающим слэшем и пустым содержимым создаёт директорию
+            zf.writestr(archive_dir, '')
+
+        # 2. Документы
+        used_paths = set()
+        for doc in documents:
+            if not doc.file:
+                continue
+
+            # Имя файла без путей Django-storage: documents/2025/03/15/report.pdf -> report.pdf
+            original_name = Path(doc.file.name).name
+            original_name = original_name.replace('/', '_').replace('\\', '_')
+
+            # В какой папке архива его положить
+            if doc.folder_id and doc.folder_id in folders_by_id:
+                archive_dir = '/'.join(build_folder_path(doc.folder))
+            else:
+                archive_dir = ''
+
+            full_path = f'{archive_dir}/{original_name}' if archive_dir else original_name
+
+            # Разрешаем коллизии имён внутри одной директории
+            if full_path in used_paths:
+                stem = Path(original_name).stem
+                suffix = Path(original_name).suffix
+                i = 1
+                while True:
+                    candidate = f'{stem}_{i}{suffix}'
+                    full_path = f'{archive_dir}/{candidate}' if archive_dir else candidate
+                    if full_path not in used_paths:
+                        break
+                    i += 1
+
+            used_paths.add(full_path)
+
+            try:
+                with doc.file.open('rb') as fh:
+                    zf.writestr(full_path, fh.read())
+            except Exception as e:
+                logger.error(
+                    'ZIP: не удалось добавить документ #%s (%s): %s',
+                    doc.pk, doc.file.name, e,
+                )
+
+    buffer.seek(0)
+
+    date_str = timezone.now().strftime('%Y%m%d_%H%M')
+    filename = f'vetoracul_documents_{date_str}.zip'
+
+    response = HttpResponse(buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Content-Length'] = str(len(response.content))
+    return response
+
+@login_required
+def vet_profile_edit(request):
+    """Редактирование профиля ветеринара: личные + профессиональные данные."""
+    if request.user.role != 'vet':
+        messages.error(request, 'Раздел доступен только ветеринарам.')
+        return redirect('home')
+
+    vet_profile, _ = VetProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'specialization': VetProfile.Specialization.THERAPIST,
+            'education': '',
+            'grad_year': timezone.now().year,
+            'license_number': '',
+            'experience': 0,
+            'clinic': '',
+        },
+    )
+
+    if request.method == 'POST':
+        user_form = VetUserForm(request.POST, request.FILES, instance=request.user)
+        profile_form = VetProfileInfoForm(request.POST, instance=vet_profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Профиль обновлён.')
+            return redirect('vet_profile_edit')
+        else:
+            for errs in list(user_form.errors.values()) + list(profile_form.errors.values()):
+                for e in errs:
+                    messages.error(request, e)
+    else:
+        user_form = VetUserForm(instance=request.user)
+        profile_form = VetProfileInfoForm(instance=vet_profile)
+
+    return render(request, 'vet/profile.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'vet_profile': vet_profile,
+    })
+
+@login_required
+def vet_access_revoke(request, pk):
+    """
+    POST — владелец отзывает доступ ветеринара к своему питомцу.
+    Удаляет VetAccess и связанную одобренную заявку.
+    Отправляет письмо ветеринару (если у него включены уведомления).
+    """
+    if request.method != 'POST':
+        return redirect('home')
+
+    access = get_object_or_404(
+        VetAccess.objects.select_related('vet', 'pet', 'pet__owner'),
+        pk=pk,
+    )
+    if access.pet.owner != request.user:
+        messages.error(request, 'Недостаточно прав.')
+        return redirect('home')
+
+    vet = access.vet
+    pet = access.pet
+    vet_name = vet.get_full_name() or vet.username
+
+    # Удаляем доступ и связанную одобренную заявку (если была),
+    # чтобы ветеринар мог отправить новую заявку.
+    access.delete()
+    VetAccessRequest.objects.filter(
+        vet=vet, pet=pet,
+        status=VetAccessRequest.Status.APPROVED,
+    ).delete()
+
+    # Уведомление ветеринару
+    if vet.notify_email and vet.email:
+        try:
+            send_mail(
+                f'Доступ к питомцу {pet.name} отозван',
+                (
+                    f'Здравствуйте, {vet.get_full_name() or vet.username}!\n\n'
+                    f'Владелец отозвал ваш доступ к питомцу {pet.name}.\n'
+                    f'Если это ошибка — свяжитесь с владельцем и отправьте новую заявку.\n\n'
+                    f'— ВетОракул'
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [vet.email],
+            )
+        except Exception as e:
+            logger.error('Не удалось отправить письмо об отзыве доступа вету %s: %s', vet.pk, e)
+
+    messages.success(request, f'Доступ ветеринара {vet_name} к питомцу {pet.name} отозван.')
+    return redirect(reverse('pet_detail', kwargs={'pk': pet.pk}))
+
+
+@login_required
+def vet_access_self_revoke(request, pk):
+    """
+    POST — ветеринар сам отказывается от доступа к питомцу.
+    """
+    if request.method != 'POST':
+        return redirect('vet_requests_list')
+    if request.user.role != 'vet':
+        return redirect('home')
+
+    access = get_object_or_404(
+        VetAccess.objects.select_related('pet', 'pet__owner'),
+        pk=pk, vet=request.user,
+    )
+    pet = access.pet
+    access.delete()
+
+    # На всякий случай чистим одобренную заявку
+    VetAccessRequest.objects.filter(
+        vet=request.user, pet=pet,
+        status=VetAccessRequest.Status.APPROVED,
+    ).delete()
+
+    messages.success(request, f'Вы отказались от доступа к питомцу {pet.name}.')
+    return redirect('vet_requests_list')

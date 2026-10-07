@@ -64,6 +64,7 @@ class User(AbstractUser):
     notify_appointments = models.BooleanField(default=True, verbose_name='Записи на приём')
     notify_vaccinations = models.BooleanField(default=True, verbose_name='Напоминания о вакцинации')
     notify_urgent = models.BooleanField(default=True, verbose_name='Срочные случаи')
+    notify_news = models.BooleanField(default=False, verbose_name='СНовости и обновления')
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -189,15 +190,20 @@ class Pet(models.Model):
     def can_view(self, user):
         if not user.is_authenticated:
             return False
+        if user.is_staff or user.is_superuser:      # ← добавлено
+            return True
         if self.is_owner(user) or self.is_co_owner(user):
             return True
         if user.role == 'vet':
             return self.vet_accesses.filter(vet=user).exists()
         return False
 
+
     def can_edit(self, user):
         if not user.is_authenticated:
             return False
+        if user.is_staff or user.is_superuser:      # ← добавлено
+            return True
         if self.is_owner(user):
             return True
         if self.co_owner_links.filter(user=user, access_level=PetCoOwner.AccessLevel.WRITE).exists():
@@ -208,10 +214,12 @@ class Pet(models.Model):
             ).exists()
         return False
 
+
     def can_add(self, user):
-        """Может ли добавлять диагнозы/документы/напоминания."""
         if not user.is_authenticated:
             return False
+        if user.is_staff or user.is_superuser:      # ← добавлено
+            return True
         if self.is_owner(user):
             return True
         if self.co_owner_links.filter(user=user, access_level=PetCoOwner.AccessLevel.WRITE).exists():
@@ -220,7 +228,12 @@ class Pet(models.Model):
             return self.vet_accesses.filter(vet=user, access_level='add').exists()
         return False
 
+
     def can_delete(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:      # ← добавлено
+            return True
         return self.is_owner(user)
     
     @property
@@ -578,7 +591,10 @@ class Subscription(models.Model):
 User = get_user_model()
 
 class EmailVerificationCode(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='verification_code')
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE,
+        related_name='verification_code'
+    )
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
@@ -587,11 +603,17 @@ class EmailVerificationCode(models.Model):
         if not self.code:
             self.code = ''.join(random.choices(string.digits, k=6))
         if not self.expires_at:
-            self.expires_at = timezone.now() + timezone.timedelta(minutes=15)
+            self.expires_at = timezone.now() + timedelta(minutes=15)
         super().save(*args, **kwargs)
 
     def is_valid(self):
         return timezone.now() < self.expires_at
+
+    @classmethod
+    def issue_code(cls, user):
+        """Удаляет старый код (если есть) и создаёт новый."""
+        cls.objects.filter(user=user).delete()
+        return cls.objects.create(user=user)
 
     def __str__(self):
         return f"{self.user.email} – {self.code}"

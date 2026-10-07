@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Согласие на обработку ПДн — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-legal.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        
+        <header class="form-header">
+            <div class="form-header-content">
+                <a href="{% url 'home' %}" class="back-button">
+                    <span class="back-arrow">←</span>
+                    <span>На главную</span>
+                </a>
+                <div class="form-header-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="form-header-logo-img">
+                    <span class="form-header-logo-text">ВетОракул</span>
+                </div>
+                <div class="form-header-spacer"></div>
+            </div>
+        </header>
+
+        <main class="form-main">
+            <div class="form-container legal-container">
+                
+                <div class="legal-header">
+                    <h1 class="legal-title">Согласие на обработку персональных данных</h1>
+                    <p class="legal-subtitle">В соответствии со ст. 9 Федерального закона от 27.07.2006 № 152-ФЗ</p>
+                    <span class="legal-updated">📅 Актуально с 05.10.2026</span>
+                </div>
+
+                <div class="legal-text">
+                    <p>Настоящим я, действуя свободно, своей волей и в своём интересе, а также подтверждая свою дееспособность, даю своё согласие <strong>Индивидуальному предпринимателю Курындиной Анастасии Сергеевне</strong>, ИНН 772607929584, ОГРНИП 323774600350046, адрес: г. Москва (далее — <strong>Оператор</strong>), на обработку моих персональных данных со следующими условиями:</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">1</span>Перечень персональных данных</h2>
+                    <div class="legal-text">
+                        <p>Я даю согласие на обработку следующих персональных данных:</p>
+                        <ul>
+                            <li>Фамилия, имя, отчество;</li>
+                            <li>Адрес электронной почты;</li>
+                            <li>Номер телефона;</li>
+                            <li>Город проживания;</li>
+                            <li>Данные питомцев (кличка, вид, порода, пол, дата рождения, вес, фотография, медицинская история);</li>
+                            <li>Данные об образовании и профессиональной деятельности (для ветеринарных врачей);</li>
+                            <li>Иные данные, предоставленные мной в процессе использования сервиса.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">2</span>Цели обработки</h2>
+                    <div class="legal-text">
+                        <p>Персональные данные обрабатываются в целях:</p>
+                        <ul>
+                            <li>Регистрации и идентификации в сервисе;</li>
+                            <li>Заключения и исполнения договора на оказание услуг по подписке;</li>
+                            <li>Предоставления доступа к функционалу сервиса;</li>
+                            <li>Обработки платежей;</li>
+                            <li>Направления информационных и рекламных сообщений (при наличии отдельного согласия);</li>
+                            <li>Передачи данных клиникам-партнёрам и лабораториям (при наличии отдельного согласия).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">3</span>Способы обработки</h2>
+                    <div class="legal-text">
+                        <p>Обработка персональных данных осуществляется с использованием средств автоматизации и без таковых, включая: сбор, запись, систематизацию, накопление, хранение, уточнение, извлечение, использование, передачу, блокирование, удаление, уничтожение.</p>
+                        <p>Данные хранятся на серверах, расположенных на территории Российской Федерации.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section">
+                    <h2 class="legal-section-title"><span class="legal-section-number">4</span>Срок действия согласия</h2>
+                    <div class="legal-text">
+                        <p>Согласие действует с момента его предоставления до момента отзыва. Согласие может быть отозвано путём направления письменного уведомления Оператору на email: <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a>, либо путём удаления аккаунта в личном кабинете.</p>
+                        <p>После отзыва согласия Оператор вправе продолжить обработку персональных данных в случаях, предусмотренных законодательством РФ.</p>
+                    </div>
+                </div>
+
+                <a href="{% url 'home' %}" class="legal-back-link">← Вернуться на главную</a>
+            </div>
+        </main>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="footer-logo-img">
+                    <span>ВетОракул</span>
+                </div>
+                <p class="footer-copy">© 2026 ИП Курындина А.С.
+    ИНН 772607929584 · ОГРНИП 323774600350046</p>
+            </div>
+            <div class="footer-col">
+                <h4>Документы</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'privacy' %}">Политика ПДн</a></li>
+                    <li><a href="{% url 'terms' %}">Пользовательское соглашение</a></li>
+                    <li><a href="{% url 'offer' %}">Публичная оферта</a></li>
+                    <li><a href="{% url 'cookies' %}">Политика cookies</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Информация</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'disclaimer' %}">Важная информация</a></li>
+                    <li><a href="{% url 'consent' %}">Согласие на обработку ПДн</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <ul class="footer-links">
+                    <li><a href="tel:+79851224241"><span class="contact-icon">📞</span>+7 (985) 122-42-41</a></li>
+                    <li><a href="mailto:vetoracul@yandex.ru"><span class="contact-icon">✉️</span>vetoracul@yandex.ru</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Все права защищены
+        </div>
+    </footer>
+</body>
+</html>

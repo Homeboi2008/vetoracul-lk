@@ -15,41 +15,6 @@
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card stat-card--pets">
-        <div class="stat-card__top">
-            <span class="stat-card__title">Всего пациентов</span>
-            <span class="stat-card__icon">🐾</span>
-        </div>
-        <div class="stat-card__value">{{ patients_count }}</div>
-    </div>
-    <div class="stat-card stat-card--reminders">
-        <div class="stat-card__top">
-            <span class="stat-card__title">Приёмов сегодня</span>
-            <span class="stat-card__icon">📅</span>
-        </div>
-        <div class="stat-card__value">{{ today_reminders.count }}</div>
-    </div>
-</div>
-
-<div class="dashboard-section">
-    <h2 class="section-heading">Ближайшие приёмы на сегодня</h2>
-    <div class="reminders-list">
-        {% for r in today_reminders %}
-            <div class="reminder-item">
-                <div class="reminder-icon reminder-icon--blue">📅</div>
-                <div class="reminder-info">
-                    <h4 class="reminder-title">{{ r.pet.name }} — {{ r.title }}</h4>
-                    <p class="reminder-time">{{ r.time|default:"—" }} • Владелец: {{ r.pet.owner.get_full_name|default:r.pet.owner.username }}</p>
-                </div>
-                <a href="{% url 'vet_patient_card' r.pet.pk %}" class="btn btn-sm btn-primary">Открыть</a>
-            </div>
-        {% empty %}
-            <p class="text-muted" style="padding:20px;">Сегодня приёмов нет.</p>
-        {% endfor %}
-    </div>
-</div>
-
 <div class="dashboard-section">
     <h2 class="section-heading">Пациенты</h2>
     <div class="pets-grid">

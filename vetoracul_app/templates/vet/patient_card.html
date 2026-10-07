@@ -49,7 +49,14 @@
             </div>
         </div>
 
-        <div class="pet-view-actions-inline">
+        <div class="pet-view-actions-inline"{% if user.is_staff %}style="flex-direction: column"{% endif %}>
+            {% if user.is_staff %}
+                <a href="{% url 'pet_export_pdf' pet.pk %}"
+                class="btn btn-primary"
+                title="Скачать полную карточку в PDF">
+                    📄 Скачать PDF
+                </a>
+            {% endif %}
             {% if can_add %}
                 <a href="{% url 'vet_medical_record_add' pet.pk %}" class="btn btn-primary">+ Медицинская запись</a>
             {% endif %}

@@ -52,6 +52,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                'vetoracul_app.context_processors.notifications',
             ],
         },
     },
@@ -121,7 +123,6 @@ LOGOUT_REDIRECT_URL = 'login'
 
 AUTHENTICATION_BACKENDS = [
     'vetoracul_app.backends.EmailOrUsernameBackend',
-    'django.contrib.auth.backends.ModelBackend',
 ]
 
 MESSAGE_TAGS = {

@@ -1,0 +1,96 @@
+{% comment %}
+Панель уведомлений.
+Требует контекста: pending_vet_requests, past_pending_reminders, notifications_count.
+Поставляется context processor'ом vetoracul_app.context_processors.notifications.
+{% endcomment %}
+<div class="notifications-wrapper">
+    <button class="notification-btn" onclick="toggleNotifications()" title="Уведомления">
+        🔔
+        <span class="notification-badge">{{ notifications_count|default:0 }}</span>
+    </button>
+    <div class="notifications-panel" id="notificationsPanel">
+        <div class="notifications-panel__header">
+            <h4 class="notifications-panel__title">Уведомления</h4>
+            <form method="post" action="{% url 'clear_notifications' %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit"
+                        class="notifications-panel__clear"
+                        onclick="return confirm('Очистить уведомления?\n\nЗаявки от ветеринаров будут помечены как «Отклонено», прошедшие напоминания — как «Пропущено».');">
+                    Очистить
+                </button>
+            </form>
+        </div>
+        <div class="notifications-panel__divider"></div>
+
+        {% if pending_vet_requests or past_pending_reminders %}
+            <div class="notifications-list" style="max-height:60vh;overflow-y:auto;">
+
+                {# === Заявки ветеринаров === #}
+                {% for r in pending_vet_requests %}
+                    <div style="padding:12px 4px;border-bottom:1px solid #e0d6f0;">
+                        <div style="font-size:0.75rem;color:#6b46c1;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                            🩺 Запрос доступа от ветеринара
+                        </div>
+                        <div style="font-size:0.9rem;line-height:1.4;margin-bottom:6px;">
+                            <strong>{{ r.vet.get_full_name|default:r.vet.username }}</strong>
+                            запрашивает доступ к питомцу
+                            <strong>{{ r.pet.name }}</strong>
+                            — уровень: <em>{{ r.get_access_level_display }}</em>
+                        </div>
+                        {% if r.message %}
+                            <div style="font-size:0.8rem;color:#6b5b8a;margin-bottom:6px;">«{{ r.message }}»</div>
+                        {% endif %}
+                        <div style="display:flex;gap:6px;">
+                            <form method="post" action="{% url 'vet_access_respond' r.pk 'approve' %}" style="flex:1;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary" style="width:100%;padding:6px 10px;font-size:0.8rem;">Одобрить</button>
+                            </form>
+                            <form method="post" action="{% url 'vet_access_respond' r.pk 'reject' %}" style="flex:1;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline" style="width:100%;padding:6px 10px;font-size:0.8rem;color:#dc2626;border-color:#dc2626;">Отклонить</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                {# === Прошедшие напоминания === #}
+                {% for r in past_pending_reminders %}
+                    <div style="padding:12px 4px;border-bottom:1px solid #e0d6f0;">
+                        <div style="font-size:0.75rem;color:#b45309;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                            ⏰ Прошедшее событие
+                        </div>
+                        <div style="font-size:0.9rem;line-height:1.4;margin-bottom:6px;">
+                            <strong>{{ r.title }}</strong> — у {{ r.pet.name }}
+                            ({{ r.date|date:"d.m.Y" }}).
+                            Обновите статус:
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <form method="post" action="{% url 'reminder_update_status' r.pk %}" style="flex:1;">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="completed">
+                                <button type="submit" class="btn btn-primary" style="width:100%;padding:6px 10px;font-size:0.8rem;">✅ Выполнено</button>
+                            </form>
+                            <form method="post" action="{% url 'reminder_update_status' r.pk %}" style="flex:1;">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="missed">
+                                <button type="submit" class="btn btn-secondary" style="width:100%;padding:6px 10px;font-size:0.8rem;">⛔ Пропущено</button>
+                            </form>
+                            <form method="post" action="{% url 'reminder_update_status' r.pk %}" style="flex:1;">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" class="btn btn-outline" style="width:100%;padding:6px 10px;font-size:0.8rem;">✖ Отменено</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+        {% else %}
+            <div class="notifications-empty">
+                <div class="empty-icon">🔔</div>
+                <p class="empty-text">Уведомлений нет</p>
+                <p class="empty-subtext">Здесь появятся запросы от ветеринаров и напоминания о событиях</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

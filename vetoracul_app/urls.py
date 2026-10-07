@@ -99,4 +99,18 @@ urlpatterns = [
     path('admin-panel/vet-invites/', views.admin_vet_invites, name='admin_vet_invites'),
     path('admin-panel/vet-invites/<int:pk>/revoke/', views.admin_vet_invites_revoke, name='admin_vet_invites_revoke'),
     path('resend-code-by-email/', views.ResendCodeByEmailView.as_view(), name='resend_code_by_email'),
+
+    path('consent', views.consent, name='consent'),
+    path('disclaimer', views.disclaimer, name='disclaimer'),
+    path('cookies', views.cookies, name='cookies'),
+    path('offer', views.offer, name='offer'),
+    path('terms', views.terms, name='terms'),
+    path('privacy', views.privacy, name='privacy'),
+    path('help', views.help_page, name='help'),
+    path('admin-panel/pet/<int:pk>/export-pdf/', views.pet_export_pdf, name='pet_export_pdf'),
+    path('admin-panel/pets/', views.admin_pets_list, name='admin_pets_list'),
+    path('documents/download-all/', views.documents_zip_download, name='documents_zip_download'),
+    path('vet/profile/', views.vet_profile_edit, name='vet_profile_edit'),
+    path('vet-access/<int:pk>/revoke/', views.vet_access_revoke, name='vet_access_revoke'),
+    path('vet-access/<int:pk>/self-revoke/', views.vet_access_self_revoke, name='vet_access_self_revoke'),
 ]

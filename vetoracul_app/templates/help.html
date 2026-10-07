@@ -1,0 +1,467 @@
+{% load static %}
+<!-- Страница: Инструкция по сервису -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инструкция — ВетОракул</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-pet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style-legal.css' %}">
+    <link rel="stylesheet" href="{% static 'css/help.css' %}">
+</head>
+<body>
+    <div class="page-wrapper">
+        
+        <header class="form-header">
+            <div class="form-header-content">
+                <a href="{% url 'home' %}" class="back-button">
+                    <span class="back-arrow">←</span>
+                    <span>На главную</span>
+                </a>
+                <div class="form-header-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="form-header-logo-img">
+                    <span class="form-header-logo-text">ВетОракул</span>
+                </div>
+                <div class="form-header-spacer"></div>
+            </div>
+        </header>
+
+        <main class="form-main">
+            <div class="form-container legal-container help-container">
+                
+                <!-- Hero -->
+                <div class="help-hero">
+                    <div class="help-hero-icon">📘</div>
+                    <h1 class="legal-title" style="text-align: center;">Инструкция по сервису</h1>
+                    <p class="help-hero-subtitle">Полное руководство по использованию ВетОракул для клиентов и ветеринарных врачей</p>
+                </div>
+
+                <!-- Навигация-табы -->
+                <div class="help-tabs">
+                    <button class="help-tab help-tab--active" data-tab="client" onclick="switchTab('client', this)">
+                        <span class="help-tab-icon">🐾</span>
+                        <span>Для клиентов</span>
+                    </button>
+                    <button class="help-tab" data-tab="vet" onclick="switchTab('vet', this)">
+                        <span class="help-tab-icon">🩺</span>
+                        <span>Для врачей</span>
+                    </button>
+                    <button class="help-tab" data-tab="faq" onclick="switchTab('faq', this)">
+                        <span class="help-tab-icon">❓</span>
+                        <span>Вопросы и ответы</span>
+                    </button>
+                </div>
+
+                <!-- ===== РАЗДЕЛ: ДЛЯ КЛИЕНТОВ ===== -->
+                <section class="help-section active" id="tab-client">
+                    
+                    <div class="help-intro">
+                        <h2>👋 Добро пожаловать в ВетОракул!</h2>
+                        <p>Этот сервис поможет вам вести медицинские карточки ваших питомцев, записываться на приём к ветеринару и хранить все важные документы в одном месте.</p>
+                    </div>
+
+                    <!-- Шаг 1 -->
+                    <div class="help-step">
+                        <div class="help-step-number">1</div>
+                        <div class="help-step-content">
+                            <h3>Регистрация и вход</h3>
+                            <p>Чтобы начать пользоваться сервисом, создайте аккаунт:</p>
+                            <ul>
+                                <li>Нажмите кнопку <strong>«Регистрация»</strong> на главной странице</li>
+                                <li>Заполните ФИО, email и телефон</li>
+                                <li>Придумайте надёжный пароль</li>
+                                <li>Примите пользовательское соглашение и политику обработки персональных данных</li>
+                            </ul>
+                            <div class="help-tip help-tip--info">
+                                <span class="help-tip-icon">💡</span>
+                                <span>После регистрации на вашу почту придёт письмо с подтверждением. Подтвердите email, чтобы получить полный доступ к сервису.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 2 -->
+                    <div class="help-step">
+                        <div class="help-step-number">2</div>
+                        <div class="help-step-content">
+                            <h3>Создание карточки питомца</h3>
+                            <p>Добавьте вашего питомца в систему:</p>
+                            <ul>
+                                <li>Перейдите в раздел <strong>«Питомцы»</strong> в боковом меню</li>
+                                <li>Нажмите кнопку <strong>«+ Добавить питомца»</strong></li>
+                                <li>Загрузите фотографию питомца (необязательно, но желательно)</li>
+                                <li>Заполните основные данные: кличка, вид, порода, пол, дата рождения, вес</li>
+                                <li>При необходимости укажите особые заметки: аллергии, хронические заболевания</li>
+                                <li>Нажмите <strong>«Создать карточку»</strong></li>
+                            </ul>
+                            <div class="help-tip help-tip--success">
+                                <span class="help-tip-icon">✅</span>
+                                <span>Вы можете добавить неограниченное количество питомцев в один аккаунт.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 3 -->
+                    <div class="help-step">
+                        <div class="help-step-number">3</div>
+                        <div class="help-step-content">
+                            <h3>Запись на приём</h3>
+                            <p>Чтобы записаться к ветеринару, перейдите на сайт <strong>vetoracul.ru</strong> и нажмите в боковом меню пункт <strong>«📅 Записаться на приём»</strong>. Заполните форму и отправьте заявку — мы свяжемся с вами для подтверждения времени.</p>
+                            <div class="help-tip help-tip--warning">
+                                <span class="help-tip-icon">⚠️</span>
+                                <span>Заявка на приём не является подтверждением записи. Мы свяжемся с вами для уточнения времени.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 4 -->
+                    <div class="help-step">
+                        <div class="help-step-number">4</div>
+                        <div class="help-step-content">
+                            <h3>Мои записи</h3>
+                            <p>В разделе <strong>«Мои записи»</strong> вы увидите:</p>
+                            <ul>
+                                <li><span class="help-status help-status--upcoming">Предстоит</span> — запланированные визиты</li>
+                                <li><span class="help-status help-status--done">Завершён</span> — состоявшиеся приёмы</li>
+                                <li><span class="help-status help-status--cancelled">Отменён</span> — отменённые записи</li>
+                            </ul>
+                            <p>Вы можете изменить или отменить запись, а также посмотреть детали завершённых приёмов.</p>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 5 -->
+                    <div class="help-step">
+                        <div class="help-step-number">5</div>
+                        <div class="help-step-content">
+                            <h3>Документы</h3>
+                            <p>В разделе <strong>«Документы»</strong> хранятся все медицинские файлы ваших питомцев:</p>
+                            <ul>
+                                <li>Результаты анализов</li>
+                                <li>Рентгеновские снимки</li>
+                                <li>Рецепты и назначения</li>
+                                <li>Ветеринарные паспорта</li>
+                                <li>Сертификаты вакцинации</li>
+                            </ul>
+                            <p>Документы можно просматривать, скачивать и фильтровать по питомцу.</p>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 6 -->
+                    <div class="help-step">
+                        <div class="help-step-number">6</div>
+                        <div class="help-step-content">
+                            <h3>Напоминания</h3>
+                            <p>Сервис автоматически напоминает о важных событиях:</p>
+                            <ul>
+                                <li>Предстоящие приёмы у ветеринара</li>
+                                <li>Даты вакцинации</li>
+                                <li>Приём лекарств</li>
+                                <li>Плановые осмотры</li>
+                            </ul>
+                            <p>Настроить уведомления можно в разделе <strong>«Параметры» → «Уведомления»</strong>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 7 -->
+                    <div class="help-step">
+                        <div class="help-step-number">7</div>
+                        <div class="help-step-content">
+                            <h3>Подписка и оплата</h3>
+                            <p>Для полного доступа к сервису необходима активная подписка:</p>
+                            <ul>
+                                <li>Оплата через СБП или банковскую карту (ЮKassa)</li>
+                                <li>Подписка оплачивается авансом за выбранный период (месяц / год)</li>
+                                <li>Управление подпиской — в разделе <strong>«Параметры»</strong> личного кабинета</li>
+                            </ul>
+                            <div class="help-tip help-tip--info">
+                                <span class="help-tip-icon">📄</span>
+                                <span>Условия подписки регулируются <a href="{% url 'offer' %}">публичной офертой</a>.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ===== РАЗДЕЛ: ДЛЯ ВРАЧЕЙ ===== -->
+                <section class="help-section" id="tab-vet">
+                    
+                    <div class="help-intro">
+                        <h2>🩺 Кабинет ветеринарного врача</h2>
+                        <p>ВетОракул помогает врачам вести приём пациентов, хранить медицинские карты и управлять расписанием.</p>
+                    </div>
+
+                    <div class="help-step">
+                        <div class="help-step-number">1</div>
+                        <div class="help-step-content">
+                            <h3>Регистрация врача</h3>
+                            <p>Для регистрации в качестве врача:</p>
+                            <ul>
+                                <li>Нажмите <strong>«Регистрация»</strong> и заполните данные: ФИО, образование, специализация, номер лицензии</li>
+                                <li>Пройдите верификацию (проверка документов администрацией)</li>
+                                <li>После подтверждения вы получите доступ к кабинету врача</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="help-step">
+                        <div class="help-step-number">2</div>
+                        <div class="help-step-content">
+                            <h3>Дашборд врача</h3>
+                            <p>На главной странице кабинета вы увидите <strong>количество наблюдаемых питомцев</strong> — это общая статистика по всем пациентам, которые находятся под вашим наблюдением.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-step">
+                        <div class="help-step-number">3</div>
+                        <div class="help-step-content">
+                            <h3>Мои пациенты</h3>
+                            <p>В разделе <strong>«Мои пациенты»</strong>:</p>
+                            <ul>
+                                <li>Список всех питомцев, которые у вас наблюдаются</li>
+                                <li>Поиск по кличке, диагнозу или владельцу</li>
+                                <li>Кнопка <strong>«Карточка»</strong> — просмотр информации о питомце, его диагнозах, документах и напоминаниях</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="help-step">
+                        <div class="help-step-number">4</div>
+                        <div class="help-step-content">
+                            <h3>Карточка пациента</h3>
+                            <p>В карточке пациента врач видит:</p>
+                            <ul>
+                                <li>Основную информацию о питомце и владельце</li>
+                                <li>Текущий диагноз</li>
+                                <li>Напоминания по пациенту</li>
+                                <li>Все прикреплённые документы</li>
+                            </ul>
+                            <p>Кнопка <strong>«+ Добавить запись»</strong> открывает форму для внесения результатов нового приёма.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-step">
+                        <div class="help-step-number">5</div>
+                        <div class="help-step-content">
+                            <h3>Создание медицинской записи</h3>
+                            <p>После приёма заполните форму:</p>
+                            <ul>
+                                <li>Выберите пациента и укажите дату/время приёма</li>
+                                <li>Опишите выявленные симптомы</li>
+                                <li>Укажите поставленный диагноз</li>
+                                <li>Назначьте лечение (препараты, дозировка, схема)</li>
+                                <li>Прикрепите документы: анализы, рецепты, снимки</li>
+                                <li>Нажмите <strong>«Сохранить запись»</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="help-step">
+                        <div class="help-step-number">6</div>
+                        <div class="help-step-content">
+                            <h3>Профиль врача</h3>
+                            <p>В разделе <strong>«Параметры»</strong> можно:</p>
+                            <ul>
+                                <li>Редактировать личные данные и специализацию</li>
+                                <li>Указать номер лицензии и место работы</li>
+                                <li>Сменить пароль</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ===== РАЗДЕЛ: FAQ ===== -->
+                <section class="help-section" id="tab-faq">
+                    
+                    <div class="help-intro">
+                        <h2>❓ Часто задаваемые вопросы</h2>
+                        <p>Ответы на популярные вопросы о сервисе ВетОракул</p>
+                    </div>
+
+                    <div class="help-faq-list">
+                        
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Как зарегистрироваться в сервисе?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Нажмите кнопку «Регистрация» на главной странице, заполните форму и подтвердите email. После этого вы получите доступ к личному кабинету.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Сколько питомцев можно добавить?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Количество питомцев не ограничено. Вы можете добавить столько животных, сколько у вас есть.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Безопасно ли хранить данные питомца?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Да. Все данные хранятся на серверах в России, защищены в соответствии с 152-ФЗ «О персональных данных». Мы не передаём информацию третьим лицам без вашего согласия.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Как оплатить подписку?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Оплата производится через платёжный агрегатор ЮKassa. Доступны банковские карты и Система быстрых платежей (СБП). Подписка оплачивается авансом за месяц или год.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Как врач может начать работать в сервисе?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Зарегистрируйтесь как ветеринарный врач, заполните данные об образовании и лицензии. После проверки документов администрацией вы получите доступ к кабинету врача.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Что делать, если забыл пароль?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>На странице входа нажмите «Забыли пароль?», введите email, и мы отправим ссылку для сброса пароля. Ссылка действительна 24 часа.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Как удалить аккаунт?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Перейдите в «Параметры» → «Данные» → «Удалить аккаунт». Все ваши данные будут удалены без возможности восстановления в течение 30 дней.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Заменяет ли сервис приём у ветеринара?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Нет. ВетОракул — это инструмент для хранения медицинских данных и организации записей. Сервис не ставит диагнозы и не назначает лечение. Все медицинские решения принимает только врач на очном приёме.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <button class="help-faq-question" onclick="toggleFaq(this)">
+                                <span>Куда обращаться за поддержкой?</span>
+                                <span class="help-faq-arrow">▼</span>
+                            </button>
+                            <div class="help-faq-answer">
+                                <p>Напишите на <a href="mailto:vetoracul@yandex.ru">vetoracul@yandex.ru</a> или позвоните по телефону <a href="tel:+79851224241">+7 (985) 122-42-41</a>. Мы отвечаем в течение 24 часов в рабочие дни.</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- CTA блок -->
+                <div class="help-cta">
+                    <h3>Остались вопросы?</h3>
+                    <p>Свяжитесь с нами — мы поможем разобраться</p>
+                    <div class="help-cta-actions">
+                        <a href="mailto:vetoracul@yandex.ru" class="btn btn-primary">
+                            <span>✉️</span>
+                            <span>Написать на почту</span>
+                        </a>
+                        <a href="tel:+79851224241" class="btn btn-secondary">
+                            <span>📞</span>
+                            <span>Позвонить</span>
+                        </a>
+                    </div>
+                </div>
+
+                <a href="{% url 'home' %}" class="legal-back-link">← Вернуться на главную</a>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // Переключение табов
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('help-tab--active'));
+            btn.classList.add('help-tab--active');
+            
+            document.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            window.scrollTo({ top: 300, behavior: 'smooth' });
+        }
+
+        // Раскрытие FAQ
+        function toggleFaq(btn) {
+            const item = btn.parentElement;
+            const isOpen = item.classList.contains('help-faq-item--open');
+            
+            document.querySelectorAll('.help-faq-item').forEach(i => {
+                i.classList.remove('help-faq-item--open');
+            });
+            
+            if (!isOpen) {
+                item.classList.add('help-faq-item--open');
+            }
+        }
+    </script>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="footer-logo-img">
+                    <span>ВетОракул</span>
+                </div>
+                <p class="footer-copy">© 2026 ИП Курындина А.С.
+    ИНН 772607929584 · ОГРНИП 323774600350046</p>
+            </div>
+            <div class="footer-col">
+                <h4>Документы</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'privacy' %}">Политика ПДн</a></li>
+                    <li><a href="{% url 'terms' %}">Пользовательское соглашение</a></li>
+                    <li><a href="{% url 'offer' %}">Публичная оферта</a></li>
+                    <li><a href="{% url 'cookies' %}">Политика cookies</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Информация</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'disclaimer' %}">Важная информация</a></li>
+                    <li><a href="{% url 'consent' %}">Согласие на обработку ПДн</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <ul class="footer-links">
+                    <li><a href="tel:+79851224241"><span class="contact-icon">📞</span>+7 (985) 122-42-41</a></li>
+                    <li><a href="mailto:vetoracul@yandex.ru"><span class="contact-icon">✉️</span>vetoracul@yandex.ru</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Все права защищены
+        </div>
+    </footer>
+</body>
+</html>

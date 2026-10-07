@@ -1,0 +1,174 @@
+{% extends 'base_app.html' %}
+{% block title %}Все питомцы — Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🐾 Все питомцы</h1>
+        <p class="page-subtitle">
+            Полный список питомцев всех владельцев.
+            {% if total_count %}Найдено: <strong>{{ total_count }}</strong>.{% endif %}
+        </p>
+    </div>
+    <a href="{% url 'admin_vet_invites' %}" class="btn btn-secondary">🩺 Приглашения врачам</a>
+</div>
+
+<!-- ===== ПОИСК ===== -->
+<div class="settings-card" style="max-width: 1000px; margin-bottom: 24px;">
+    <form method="get" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:280px;margin:0;">
+            <label class="form-label">Поиск</label>
+            <input type="text"
+                   name="q"
+                   class="form-input"
+                   value="{{ q }}"
+                   placeholder="Кличка, ФИО владельца, email, телефон...">
+            <p class="form-hint">Можно ввести несколько слов через пробел — например, «Иванов Иван».</p>
+        </div>
+        <button type="submit" class="btn btn-primary">🔍 Найти</button>
+        {% if q %}
+            <a href="{% url 'admin_pets_list' %}" class="btn btn-secondary">Сбросить</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- ===== СПИСОК ===== -->
+{% if pets %}
+    <div class="settings-card" style="max-width:100%;padding:0;overflow:hidden;">
+        <table class="data-table" style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f5f0ff;">
+                    <th style="padding:12px 10px;text-align:left;border-bottom:1px solid #e0d6f0;width:60px;">Фото</th>
+                    <th style="padding:12px 10px;text-align:left;border-bottom:1px solid #e0d6f0;">Питомец</th>
+                    <th style="padding:12px 10px;text-align:left;border-bottom:1px solid #e0d6f0;">Владелец</th>
+                    <th style="padding:12px 10px;text-align:left;border-bottom:1px solid #e0d6f0;">Контакты</th>
+                    <th style="padding:12px 10px;text-align:left;border-bottom:1px solid #e0d6f0;width:140px;">Состояние</th>
+                    <th style="padding:12px 10px;text-align:right;border-bottom:1px solid #e0d6f0;width:200px;">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pet in pets %}
+                    <tr style="border-bottom:1px solid #f0ebff;">
+                        <!-- Фото -->
+                        <td style="padding:10px;">
+                            {% if pet.photo %}
+                                <img src="{{ pet.photo.url }}" alt="{{ pet.name }}"
+                                     style="width:48px;height:48px;object-fit:cover;border-radius:50%;display:block;">
+                            {% else %}
+                                <div style="width:48px;height:48px;border-radius:50%;background:#ede9fe;
+                                            display:flex;align-items:center;justify-content:center;
+                                            font-weight:700;color:#6b46c1;font-size:1.1rem;">
+                                    {{ pet.name|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Питомец -->
+                        <td style="padding:10px;vertical-align:top;">
+                            <a href="{% url 'pet_detail' pet.pk %}"
+                               style="font-weight:700;color:#2d1b4e;text-decoration:none;font-size:0.95rem;">
+                                {{ pet.name }}
+                            </a>
+                            <div style="font-size:0.8rem;color:#6b5b8a;margin-top:3px;">
+                                {{ pet.animal_type }}{% if pet.breed %}, {{ pet.breed }}{% endif %}
+                                • {% if pet.gender == 'M' %}♂{% else %}♀{% endif %}
+                                {% if pet.age %} • {{ pet.age }} лет{% endif %}
+                                • {{ pet.weight }} кг
+                            </div>
+                            <div style="font-size:0.75rem;color:#8a7fa8;margin-top:2px;">
+                                ID {{ pet.pk }} • создан {{ pet.created_at|date:"d.m.Y" }}
+                            </div>
+                        </td>
+
+                        <!-- Владелец -->
+                        <td style="padding:10px;vertical-align:top;">
+                            <div style="font-weight:600;color:#2d1b4e;font-size:0.9rem;">
+                                {{ pet.owner.get_full_name|default:pet.owner.username }}
+                            </div>
+                            {% if pet.co_owner_links.all %}
+                                <div style="font-size:0.75rem;color:#6b5b8a;margin-top:3px;">
+                                    Совладельцы:
+                                    {% for link in pet.co_owner_links.all %}
+                                        {{ link.user.get_full_name|default:link.user.username }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Контакты -->
+                        <td style="padding:10px;vertical-align:top;font-size:0.85rem;">
+                            <div>
+                                <a href="mailto:{{ pet.owner.email }}" style="color:#6b46c1;text-decoration:none;">
+                                    ✉️ {{ pet.owner.email }}
+                                </a>
+                            </div>
+                            {% if pet.owner.phone %}
+                                <div style="margin-top:3px;">
+                                    <a href="tel:{{ pet.owner.phone }}" style="color:#6b46c1;text-decoration:none;">
+                                        📞 {{ pet.owner.phone }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            {% if pet.owner.city %}
+                                <div style="color:#8a7fa8;font-size:0.8rem;margin-top:3px;">
+                                    📍 {{ pet.owner.city }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Состояние -->
+                        <td style="padding:10px;vertical-align:top;">
+                            <span class="pet-card__status {{ pet.health_status_class }}"
+                                  style="display:inline-block;font-size:0.75rem;">
+                                {{ pet.get_health_status_display }}
+                            </span>
+                        </td>
+
+                        <!-- Действия -->
+                        <td style="padding:10px;vertical-align:top;text-align:right;white-space:nowrap;">
+                            <a href="{% url 'pet_detail' pet.pk %}"
+                               class="btn btn-secondary"
+                               style="padding:6px 10px;font-size:0.8rem;">Открыть</a>
+                            <a href="{% url 'pet_export_pdf' pet.pk %}"
+                               class="btn btn-primary"
+                               style="padding:6px 10px;font-size:0.8rem;">📄 PDF</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== ПАГИНАЦИЯ ===== -->
+    {% if page_obj.has_other_pages %}
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+            {% if page_obj.has_previous %}
+                <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page=1" class="btn btn-secondary">« Первая</a>
+                <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-secondary">‹ Назад</a>
+            {% endif %}
+
+            <span style="padding:10px 16px;font-weight:600;color:#6b46c1;">
+                Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-secondary">Вперёд ›</a>
+                <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.paginator.num_pages }}" class="btn btn-secondary">Последняя »</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+{% else %}
+    <div class="docs-empty">
+        <div class="empty-icon">🐾</div>
+        {% if q %}
+            <h3 class="empty-title">Ничего не найдено</h3>
+            <p class="empty-text">Попробуйте изменить поисковый запрос или <a href="{% url 'admin_pets_list' %}">сбросить фильтр</a>.</p>
+        {% else %}
+            <h3 class="empty-title">Питомцев пока нет</h3>
+            <p class="empty-text">Ни один пользователь ещё не добавил питомца.</p>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% endblock %}
