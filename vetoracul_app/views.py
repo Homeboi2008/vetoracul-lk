@@ -1576,7 +1576,6 @@ def pet_export_pdf(request, pk):
     documents = list(pet.documents.filter(is_deleted=False).order_by('-date'))
     reminders = list(pet.reminders.order_by('-date', '-time'))
     co_owners = list(pet.co_owner_links.select_related('user').all())
-
     try:
         pdf_bytes = PetCardPDF(
             pet=pet,

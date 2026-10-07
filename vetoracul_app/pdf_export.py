@@ -45,8 +45,35 @@ class PetCardPDF(FPDF):
     # ------------------------------------------------------------------
     # Шрифты
     # ------------------------------------------------------------------
+
+    def _resolve_fonts_dir(self):
+        """Ищет папку fonts/ в разных возможных местах в зависимости от окружения."""
+        candidates = []
+
+        # 1. STATICFILES_DIRS — dev-режим
+        static_dirs = getattr(settings, 'STATICFILES_DIRS', None) or []
+        for d in static_dirs:
+            candidates.append(Path(d) / 'fonts')
+
+        # 2. STATIC_ROOT — production (после collectstatic)
+        static_root = getattr(settings, 'STATIC_ROOT', None)
+        if static_root:
+            candidates.append(Path(static_root) / 'fonts')
+
+        # 3. Папка static приложения — крайний случай
+        candidates.append(Path(__file__).resolve().parent / 'static' / 'fonts')
+
+        for path in candidates:
+            if path.is_dir():
+                return path
+
+        raise FileNotFoundError(
+            'Папка fonts/ не найдена. Проверьте STATICFILES_DIRS/STATIC_ROOT '
+            'и наличие собранной статики (collectstatic).'
+        )
+
     def _register_fonts(self):
-        fonts_dir = Path(settings.STATICFILES_DIRS[0]) / 'fonts'
+        fonts_dir = self._resolve_fonts_dir()
         regular = fonts_dir / 'PTSans-Regular.ttf'
         bold = fonts_dir / 'PTSans-Bold.ttf'
         italic = fonts_dir / 'PTSans-Italic.ttf'
