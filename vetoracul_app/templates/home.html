@@ -319,6 +319,12 @@
     </style>
 </head>
 <body>
+    <div class="preloader" id="preloader">
+        <div class="preloader-content">
+            <img src="{% static 'img/eye1.svg' %}" alt="ВетОракул" class="preloader-logo">
+            <h1 class="preloader-title">ВетОракул</h1>
+        </div>
+    </div>
     {% if messages %}
         <div class="toast-container">
             {% for message in messages %}
@@ -1984,5 +1990,21 @@
             Все права защищены
         </div>
     </footer>
+<script>
+  // Прелоадер
+  window.addEventListener('load', () => {
+    const preloader = document.getElementById('preloader');
+    
+    // Скрываем через 1.5 секунды
+    setTimeout(() => {
+      preloader.classList.add('hidden');
+      
+      // Полностью удаляем из DOM после анимации
+      setTimeout(() => {
+        preloader.remove();
+      }, 500);
+    }, 1500);
+  });
+</script>
 </body>
 </html>

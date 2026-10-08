@@ -19,7 +19,10 @@
 
     <div class="pets-grid">
         {% for pet in pets %}
-            <div class="pet-card">
+            <div class="pet-card pet-card--clickable"
+                onclick="window.location.href='{% url 'pet_detail' pet.pk %}'"
+                style="cursor:pointer;">
+
                 <div class="pet-card__header">
                     <div class="pet-card__avatar">
                         {% if pet.photo %}
@@ -92,7 +95,8 @@
                         <div class="documents-list">
                             {% for doc in pet.documents.all %}
                                 {% if not doc.is_deleted and forloop.counter <= 3 %}
-                                    <div class="document-item" onclick="window.open('{{ doc.file.url }}', '_blank')">
+                                    <div class="document-item"
+                                        onclick="event.stopPropagation(); window.open('{{ doc.file.url }}', '_blank');">
                                         <span class="doc-icon">📄</span>
                                         <div class="doc-info">
                                             <span class="doc-name">{{ doc.title|default:doc.file.name|truncatechars:30 }}</span>
@@ -108,11 +112,8 @@
                     </div>
                 </div>
 
-                <div class="pet-card__footer">
-                    <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-secondary">📅 Открыть</a>
-                    {% if pet.owner == user or user in pet.co_owners.all %}
-                        <a href="{% url 'pet_edit' pet.pk %}" class="btn btn-primary">✏️ Изменить</a>
-                    {% endif %}
+                <div class="pet-card__footer" onclick="event.stopPropagation();">
+                    <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-primary">📅 Подробнее</a>
                 </div>
             </div>
         {% empty %}

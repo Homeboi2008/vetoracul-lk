@@ -2011,3 +2011,12 @@ body {
 .owner-info-value { color: var(--color-text); font-weight: 500; }
 .owner-info-link { color: var(--color-accent); text-decoration: none; font-weight: 500; }
 .owner-info-link:hover { color: var(--color-primary); text-decoration: underline; }
+
+.pet-card--clickable {
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.pet-card--clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(45, 27, 78, 0.12);
+    border-color: var(--color-accent-soft, #c4b5fd);
+}
